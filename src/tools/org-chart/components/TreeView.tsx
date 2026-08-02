@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { buildForest, type TreeNode } from '../model/graph'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { buildForest, inTreePeople, type TreeNode } from '../model/graph'
 import type { Person } from '../model/types'
+import { HighlightName } from './HighlightName'
+
+/** Above this, nodes start collapsed so we don't mount thousands of open branches. */
+const COLLAPSE_DEFAULT_THRESHOLD = 200
 
 type Props = {
   people: Person[]
@@ -11,6 +15,12 @@ type Props = {
   onOpenMove: (personId: string) => void
   expandAllKey: number
   collapsedAllKey: number
+  /** Ancestors that must stay open so `revealId` is visible */
+  ensureOpenIds: ReadonlySet<string>
+  revealId: string | null
+  revealToken: number
+  highlightQuery: string
+  matchIds: ReadonlySet<string>
 }
 
 function Row({
@@ -23,6 +33,10 @@ function Row({
   onOpenMove,
   forceExpand,
   forceCollapse,
+  ensureOpenIds,
+  defaultOpen,
+  highlightQuery,
+  matchIds,
 }: {
   node: TreeNode
   depth: number
@@ -33,10 +47,16 @@ function Row({
   onOpenMove: (personId: string) => void
   forceExpand: number
   forceCollapse: number
+  ensureOpenIds: ReadonlySet<string>
+  defaultOpen: boolean
+  highlightQuery: string
+  matchIds: ReadonlySet<string>
 }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(defaultOpen)
   const [dropOver, setDropOver] = useState(false)
   const directs = node.children.length
+  const isMatch = matchIds.has(node.person.id)
+  const isSelected = selectedId === node.person.id
 
   useEffect(() => {
     if (forceExpand > 0) setOpen(true)
@@ -46,18 +66,24 @@ function Row({
     if (forceCollapse > 0) setOpen(false)
   }, [forceCollapse])
 
+  useEffect(() => {
+    if (ensureOpenIds.has(node.person.id)) setOpen(true)
+  }, [ensureOpenIds, node.person.id])
+
   return (
     <>
       <div
         className={[
           'oc-row',
-          selectedId === node.person.id ? 'oc-row-selected' : '',
+          isSelected ? 'oc-row-selected' : '',
           dropOver ? 'oc-row-drop' : '',
           justMovedId === node.person.id ? 'oc-row-just-moved' : '',
+          isMatch ? 'oc-row-match' : '',
         ]
           .filter(Boolean)
           .join(' ')}
         style={{ paddingLeft: 12 + depth * 24 }}
+        data-person-id={node.person.id}
         onClick={() => onSelect(node.person.id)}
         onDragOver={(e) => {
           e.preventDefault()
@@ -116,7 +142,9 @@ function Row({
           </svg>
         </span>
         <div className="oc-row-main">
-          <div className="oc-row-name">{node.person.name}</div>
+          <div className="oc-row-name">
+            <HighlightName name={node.person.name} query={highlightQuery} />
+          </div>
           <div className="oc-row-meta">
             {node.person.managerId == null ? 'Root' : 'Reports up'}
             {directs > 0
@@ -149,6 +177,10 @@ function Row({
               onOpenMove={onOpenMove}
               forceExpand={forceExpand}
               forceCollapse={forceCollapse}
+              ensureOpenIds={ensureOpenIds}
+              defaultOpen={defaultOpen}
+              highlightQuery={highlightQuery}
+              matchIds={matchIds}
             />
           ))
         : null}
@@ -165,8 +197,31 @@ export function TreeView({
   onOpenMove,
   expandAllKey,
   collapsedAllKey,
+  ensureOpenIds,
+  revealId,
+  revealToken,
+  highlightQuery,
+  matchIds,
 }: Props) {
   const forest = useMemo(() => buildForest(people), [people])
+  const treeCount = useMemo(() => inTreePeople(people).length, [people])
+  const defaultOpen = treeCount <= COLLAPSE_DEFAULT_THRESHOLD
+  const scrollHostRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!revealId) return
+    const host = scrollHostRef.current
+    if (!host) return
+    // Wait a frame so ensureOpen can mount the row
+    const id = window.requestAnimationFrame(() => {
+      const el = host.querySelector(
+        `[data-person-id="${CSS.escape(revealId)}"]`,
+      )
+      // Instant — search/keyboard jumps must not animate (Emil: high-frequency actions)
+      el?.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [revealId, revealToken, ensureOpenIds])
 
   if (forest.length === 0) {
     return (
@@ -177,7 +232,7 @@ export function TreeView({
   }
 
   return (
-    <div className="oc-tree-card">
+    <div className="oc-tree-card" ref={scrollHostRef}>
       {forest.map((node) => (
         <Row
           key={node.person.id}
@@ -190,6 +245,10 @@ export function TreeView({
           onOpenMove={onOpenMove}
           forceExpand={expandAllKey}
           forceCollapse={collapsedAllKey}
+          ensureOpenIds={ensureOpenIds}
+          defaultOpen={defaultOpen}
+          highlightQuery={highlightQuery}
+          matchIds={matchIds}
         />
       ))}
     </div>

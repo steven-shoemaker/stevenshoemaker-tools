@@ -45,19 +45,19 @@ export function ToolsLanding() {
 
       <main className="tl-main">
         <section className="tl-hero">
-          <p className="tl-eyebrow">tools.stevenshoemaker.me</p>
-          <h1 className="tl-headline">
+          <p className="tl-eyebrow tl-enter tl-enter-1">tools.stevenshoemaker.me</p>
+          <h1 className="tl-headline tl-enter tl-enter-2">
             Small tools.
             <br />
             Run in your browser.
           </h1>
-          <p className="tl-lede">
+          <p className="tl-lede tl-enter tl-enter-3">
             Single-purpose utilities for people ops and analysis. Nothing
             uploaded — your data stays on your machine.
           </p>
         </section>
 
-        <section className="tl-list" aria-labelledby="tl-available">
+        <section className="tl-list tl-enter tl-enter-4" aria-labelledby="tl-available">
           <h2 id="tl-available" className="tl-section-label">
             Available
           </h2>

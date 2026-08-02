@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   getDirects,
   removedPeople,
   unassignedPeople,
 } from '../model/graph'
+import { buildPersonSearchIndex, searchPeople } from '../model/search'
 import type { OrgChartApi } from '../model/useOrgChart'
 import { AnimatedNumber } from './AnimatedNumber'
 import { Dialogs } from './Dialogs'
+import { TreeSearch } from './TreeSearch'
 import { TreeView } from './TreeView'
 
 type Props = {
@@ -41,6 +43,48 @@ export function SandboxScreen({ api }: Props) {
 
   const [expandKey, setExpandKey] = useState(0)
   const [collapseKey, setCollapseKey] = useState(0)
+  const [ensureOpenIds, setEnsureOpenIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  )
+  const [revealId, setRevealId] = useState<string | null>(null)
+  const [revealToken, setRevealToken] = useState(0)
+  const [highlightQuery, setHighlightQuery] = useState('')
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'f') return
+      const t = e.target
+      if (
+        t instanceof HTMLElement &&
+        (t.tagName === 'INPUT' ||
+          t.tagName === 'TEXTAREA' ||
+          t.isContentEditable) &&
+        t !== searchInputRef.current
+      ) {
+        return
+      }
+      e.preventDefault()
+      searchInputRef.current?.focus()
+      searchInputRef.current?.select()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  const searchIndex = useMemo(
+    () => (working ? buildPersonSearchIndex(working.people) : null),
+    [working],
+  )
+  const matchIds = useMemo(() => {
+    if (!searchIndex || !highlightQuery.trim()) return new Set<string>()
+    const { hits } = searchPeople(searchIndex, {
+      query: highlightQuery,
+      placements: ['inTree'],
+      limit: 500,
+    })
+    return new Set(hits.map((h) => h.id))
+  }, [searchIndex, highlightQuery])
 
   const selected = useMemo(
     () => working?.people.find((p) => p.id === selectedId) ?? null,
@@ -295,7 +339,17 @@ export function SandboxScreen({ api }: Props) {
 
         <section className="oc-tree-pane">
           <div className="oc-tree-toolbar">
-            <p>Drag to Move · or search Move… · Add person anytime</p>
+            <TreeSearch
+              people={working.people}
+              inputRef={searchInputRef}
+              onSelect={setSelectedId}
+              onQueryChange={setHighlightQuery}
+              onReveal={(personId, ancestors) => {
+                setEnsureOpenIds(new Set(ancestors))
+                setRevealId(personId)
+                setRevealToken((t) => t + 1)
+              }}
+            />
             <div className="oc-actions-row">
               <button
                 type="button"
@@ -308,6 +362,11 @@ export function SandboxScreen({ api }: Props) {
                 type="button"
                 className="oc-btn oc-btn-secondary"
                 onClick={() => setExpandKey((k) => k + 1)}
+                title={
+                  stats.people > 500
+                    ? 'Expanding very large trees can be slow'
+                    : undefined
+                }
               >
                 Expand all
               </button>
@@ -320,6 +379,9 @@ export function SandboxScreen({ api }: Props) {
               </button>
             </div>
           </div>
+          <p className="oc-tree-hint">
+            Drag to Move · ⌘F to find · Move… for reassignment
+          </p>
           <TreeView
             people={working.people}
             selectedId={selectedId}
@@ -329,6 +391,11 @@ export function SandboxScreen({ api }: Props) {
             onOpenMove={(id) => setDialog({ type: 'move', personId: id })}
             expandAllKey={expandKey}
             collapsedAllKey={collapseKey}
+            ensureOpenIds={ensureOpenIds}
+            revealId={revealId}
+            revealToken={revealToken}
+            highlightQuery={highlightQuery}
+            matchIds={matchIds}
           />
         </section>
       </div>

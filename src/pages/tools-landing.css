@@ -8,8 +8,11 @@
   --tl-soft: #fafafa;
   --tl-green-wash: #ecfdf5;
   --tl-green-ink: #047857;
-  --tl-radius: 16px;
+  /* concentric: icon 12 + card padding 16 */
+  --tl-radius: 28px;
+  --tl-radius-inner: 12px;
   --tl-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --tl-ease-out: cubic-bezier(0.2, 0, 0, 1);
 
   min-height: 100vh;
   display: flex;
@@ -18,6 +21,7 @@
   color: var(--tl-ink);
   font-family: var(--font-text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .tools-landing *,
@@ -73,11 +77,19 @@
 }
 
 .tl-site-link {
+  position: relative;
   font-family: var(--font-rounded);
   font-size: 13px;
   font-weight: 500;
   color: var(--tl-muted);
   text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.tl-site-link::after {
+  content: '';
+  position: absolute;
+  inset: -12px -8px;
 }
 
 .tl-site-link:hover {
@@ -118,6 +130,7 @@
   letter-spacing: -0.03em;
   line-height: 1.1;
   color: var(--tl-ink);
+  text-wrap: balance;
 }
 
 .tl-lede {
@@ -127,6 +140,40 @@
   font-weight: 400;
   line-height: 1.5;
   color: var(--tl-muted);
+  text-wrap: pretty;
+}
+
+.tl-enter {
+  animation: tl-enter 250ms var(--tl-ease-out) both;
+}
+
+.tl-enter-1 {
+  animation-delay: 0ms;
+}
+
+.tl-enter-2 {
+  animation-delay: 50ms;
+}
+
+.tl-enter-3 {
+  animation-delay: 100ms;
+}
+
+.tl-enter-4 {
+  animation-delay: 150ms;
+}
+
+@keyframes tl-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
 }
 
 .tl-list {
@@ -151,10 +198,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 20px 22px;
+  padding: 16px;
   background: var(--tl-surface);
-  border: 1px solid var(--tl-line);
+  border: 1px solid rgba(0, 0, 0, 0.04);
   border-radius: var(--tl-radius);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.03);
 }
 
 .tl-tool-soon {
@@ -173,7 +223,7 @@
 .tl-tool-icon {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--tl-radius-inner);
   background: var(--tl-ink);
   display: grid;
   place-items: center;
@@ -221,6 +271,7 @@
   font-size: 14px;
   line-height: 1.45;
   color: var(--tl-muted);
+  text-wrap: pretty;
 }
 
 .tl-muted {
@@ -232,17 +283,18 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  padding: 11px 16px;
-  border-radius: 10px;
+  min-height: 40px;
+  padding: 11px 14px 11px 16px;
+  border-radius: 12px;
   background: var(--tl-ink);
   color: #fff;
   font-family: var(--font-rounded);
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
-  transition:
-    background 150ms ease,
-    transform 140ms var(--tl-ease);
+  transition-property: background-color, transform;
+  transition-duration: 150ms, 140ms;
+  transition-timing-function: ease, var(--tl-ease);
 }
 
 .tl-open:hover {
@@ -251,7 +303,17 @@
 
 @media (hover: hover) and (pointer: fine) {
   .tl-open:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-enter {
+    animation: none;
+  }
+
+  .tl-open:active {
+    transform: none;
   }
 }
 

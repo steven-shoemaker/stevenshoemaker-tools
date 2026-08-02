@@ -2,19 +2,17 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
 } from 'react'
-import {
-  canMoveUnder,
-  getDirects,
-  inTreePeople,
-} from '../model/graph'
+import { getDirects } from '../model/graph'
 import type { DirectPlacement, Person } from '../model/types'
 import type { OrgChartApi } from '../model/useOrgChart'
+import { VirtualizedPickerList } from './VirtualizedPickerList'
 
 type Props = {
   api: OrgChartApi
@@ -33,7 +31,21 @@ function Backdrop({
   children: ReactNode
   onClose: () => void
 }) {
+  const [entered, setEntered] = useState(false)
   const [leaving, setLeaving] = useState(false)
+
+  useEffect(() => {
+    // Double rAF so the browser paints opacity:0 before transitioning in
+    let inner = 0
+    const outer = window.requestAnimationFrame(() => {
+      inner = window.requestAnimationFrame(() => setEntered(true))
+    })
+    return () => {
+      window.cancelAnimationFrame(outer)
+      window.cancelAnimationFrame(inner)
+    }
+  }, [])
+
   const close = useCallback(() => {
     if (leaving) return
     setLeaving(true)
@@ -43,7 +55,11 @@ function Backdrop({
   return (
     <ModalCloseContext.Provider value={close}>
       <div
-        className={['oc-modal-backdrop', leaving ? 'is-leaving' : '']
+        className={[
+          'oc-modal-backdrop',
+          entered ? 'is-entered' : '',
+          leaving ? 'is-leaving' : '',
+        ]
           .filter(Boolean)
           .join(' ')}
         role="presentation"
@@ -54,63 +70,6 @@ function Backdrop({
         {children}
       </div>
     </ModalCloseContext.Provider>
-  )
-}
-
-function ManagerPickerList({
-  people,
-  personId,
-  query,
-  selectedManagerId,
-  onSelect,
-}: {
-  people: Person[]
-  personId: string
-  query: string
-  selectedManagerId: string | null
-  onSelect: (id: string) => void
-}) {
-  const q = query.trim().toLowerCase()
-  const candidates = inTreePeople(people)
-    .filter((p) => p.id !== personId)
-    .filter((p) => !q || p.name.toLowerCase().includes(q))
-    .slice(0, 12)
-
-  return (
-    <div className="oc-result-list">
-      {candidates.map((p) => {
-        const check = canMoveUnder(people, personId, p.id)
-        const directs = getDirects(people, p.id).length
-        return (
-          <button
-            key={p.id}
-            type="button"
-            className={
-              selectedManagerId === p.id
-                ? 'oc-result oc-result-active'
-                : 'oc-result'
-            }
-            disabled={!check.ok}
-            onClick={() => onSelect(p.id)}
-          >
-            <span>
-              <strong>{p.name}</strong>
-              <span>
-                {check.ok
-                  ? `${directs} direct${directs === 1 ? '' : 's'}${p.managerId ? '' : ' · Root'}`
-                  : check.reason}
-              </span>
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 500 }}>
-              {check.ok ? 'Select' : 'Blocked'}
-            </span>
-          </button>
-        )
-      })}
-      {candidates.length === 0 ? (
-        <p className="oc-modal-sub">No matches</p>
-      ) : null}
-    </div>
   )
 }
 
@@ -355,7 +314,7 @@ function MoveDialogBody({
           autoFocus
         />
       </div>
-      <ManagerPickerList
+      <VirtualizedPickerList
         people={people}
         personId={personId}
         query={query}
@@ -472,7 +431,7 @@ function CollectPickBody({
           autoFocus
         />
       </div>
-      <ManagerPickerList
+      <VirtualizedPickerList
         people={people}
         personId={personId}
         query={query}
@@ -687,16 +646,8 @@ function AddDialogBody({
           />
         </div>
         {query.trim() ? (
-          <ManagerPickerList
-            people={[
-              ...people,
-              {
-                id: '__new__',
-                name: name || 'New',
-                managerId: null,
-                placement: 'inTree',
-              },
-            ]}
+          <VirtualizedPickerList
+            people={people}
             personId="__new__"
             query={query}
             selectedManagerId={managerId}
