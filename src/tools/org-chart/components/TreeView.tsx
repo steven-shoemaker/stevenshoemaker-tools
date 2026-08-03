@@ -54,6 +54,7 @@ function Row({
 }) {
   const [open, setOpen] = useState(defaultOpen)
   const [dropOver, setDropOver] = useState(false)
+  const [dragging, setDragging] = useState(false)
   const directs = node.children.length
   const isMatch = matchIds.has(node.person.id)
   const isSelected = selectedId === node.person.id
@@ -77,6 +78,7 @@ function Row({
           'oc-row',
           isSelected ? 'oc-row-selected' : '',
           dropOver ? 'oc-row-drop' : '',
+          dragging ? 'oc-row-dragging' : '',
           justMovedId === node.person.id ? 'oc-row-just-moved' : '',
           isMatch ? 'oc-row-match' : '',
         ]
@@ -87,6 +89,7 @@ function Row({
         onClick={() => onSelect(node.person.id)}
         onDragOver={(e) => {
           e.preventDefault()
+          e.dataTransfer.dropEffect = 'move'
           setDropOver(true)
         }}
         onDragLeave={() => setDropOver(false)}
@@ -99,8 +102,9 @@ function Row({
       >
         <button
           type="button"
-          className="oc-chevron"
+          className={open ? 'oc-chevron is-open' : 'oc-chevron'}
           aria-label={open ? 'Collapse' : 'Expand'}
+          aria-expanded={directs > 0 ? open : undefined}
           onClick={(e) => {
             e.stopPropagation()
             if (directs > 0) setOpen((v) => !v)
@@ -109,7 +113,7 @@ function Row({
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path
-              d={open ? 'M3 4.5L6 7.5L9 4.5' : 'M4.5 3L7.5 6L4.5 9'}
+              d="M4.5 3L7.5 6L4.5 9"
               stroke="currentColor"
               strokeWidth="1.4"
               strokeLinecap="round"
@@ -123,6 +127,20 @@ function Row({
           onDragStart={(e) => {
             e.dataTransfer.setData('text/person-id', node.person.id)
             e.dataTransfer.effectAllowed = 'move'
+            setDragging(true)
+            const row = e.currentTarget.closest('.oc-row')
+            if (row instanceof HTMLElement) {
+              const rect = row.getBoundingClientRect()
+              e.dataTransfer.setDragImage(
+                row,
+                e.clientX - rect.left,
+                e.clientY - rect.top,
+              )
+            }
+          }}
+          onDragEnd={() => {
+            setDragging(false)
+            setDropOver(false)
           }}
           onClick={(e) => e.stopPropagation()}
           aria-label={`Drag ${node.person.name}`}

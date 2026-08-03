@@ -69,7 +69,7 @@ export function useOrgChart() {
 
   useEffect(() => {
     if (!justMovedId) return
-    const t = window.setTimeout(() => setJustMovedId(null), 650)
+    const t = window.setTimeout(() => setJustMovedId(null), 220)
     return () => window.clearTimeout(t)
   }, [justMovedId])
 

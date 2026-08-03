@@ -31,7 +31,7 @@ export function AnimatedNumber({
   value,
   decimals = 0,
   className,
-  durationMs = 280,
+  durationMs = 200,
 }: Props) {
   const [display, setDisplay] = useState(value)
   const displayRef = useRef(value)

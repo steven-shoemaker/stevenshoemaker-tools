@@ -36,6 +36,7 @@ export function TreeSearch({
   inputRef,
 }: Props) {
   const listId = useId()
+  const rootRef = useRef<HTMLDivElement>(null)
   const localRef = useRef<HTMLInputElement>(null)
   const input = inputRef ?? localRef
   const [rawQuery, setRawQuery] = useState('')
@@ -121,15 +122,34 @@ export function TreeSearch({
       }
     } else if (e.key === 'Escape') {
       e.preventDefault()
+      // Progressive dismiss: panel first, then clear + blur
+      if (panelOpen) {
+        setPanelOpen(false)
+        return
+      }
       setRawQuery('')
       setQuery('')
-      setPanelOpen(false)
+      onQueryChange?.('')
+      lastJumped.current = null
       input.current?.blur()
     }
   }
 
+  useEffect(() => {
+    if (!panelOpen) return
+    const onPointerDown = (e: PointerEvent) => {
+      const root = rootRef.current
+      if (!root) return
+      if (e.target instanceof Node && !root.contains(e.target)) {
+        setPanelOpen(false)
+      }
+    }
+    window.addEventListener('pointerdown', onPointerDown)
+    return () => window.removeEventListener('pointerdown', onPointerDown)
+  }, [panelOpen])
+
   return (
-    <div className="oc-tree-search">
+    <div className="oc-tree-search" ref={rootRef}>
       <div className="oc-tree-search-bar">
         <svg
           className="oc-tree-search-icon"
@@ -218,7 +238,7 @@ export function TreeSearch({
       {panelOpen && q ? (
         <div
           id={listId}
-          className="oc-tree-search-panel"
+          className="oc-tree-search-panel is-open"
           role="listbox"
           aria-label="Search results"
         >

@@ -55,7 +55,7 @@
 }
 
 .org-chart :focus-visible {
-  outline: 2px solid var(--oc-ink);
+  outline: 2px solid rgba(24, 24, 27, 0.55);
   outline-offset: 2px;
 }
 
@@ -73,9 +73,10 @@
   line-height: 1.2;
   background: var(--oc-soft);
   color: var(--oc-ink);
+  /* Press feedback on pointer-down — short ease-out */
   transition-property: background-color, border-color, color, transform;
-  transition-duration: 150ms, 150ms, 150ms, 140ms;
-  transition-timing-function: ease, ease, ease, var(--oc-ease-out);
+  transition-duration: 150ms, 150ms, 150ms, 100ms;
+  transition-timing-function: ease, ease, ease, ease-out;
 }
 
 .oc-btn-primary {
@@ -186,13 +187,19 @@
 }
 
 .oc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 14px 20px;
-  background: var(--oc-surface);
-  border-bottom: 1px solid var(--oc-line);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(228, 228, 231, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .oc-brand {
@@ -432,13 +439,19 @@
 }
 
 .oc-sandbox-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 14px 20px;
-  background: var(--oc-surface);
-  border-bottom: 1px solid var(--oc-line);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(228, 228, 231, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   flex-wrap: wrap;
 }
 
@@ -486,8 +499,11 @@
 .oc-rail {
   width: 300px;
   flex-shrink: 0;
-  background: var(--oc-surface);
-  border-right: 1px solid var(--oc-line);
+  /* Heavier material = structural region */
+  background: rgba(250, 250, 250, 0.88);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-right: 1px solid rgba(228, 228, 231, 0.85);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -636,8 +652,8 @@
   font-weight: 500;
   color: var(--oc-ink);
   transition-property: background-color, border-color, color, transform;
-  transition-duration: 140ms;
-  transition-timing-function: ease;
+  transition-duration: 140ms, 140ms, 140ms, 100ms;
+  transition-timing-function: ease, ease, ease, ease-out;
 }
 
 .oc-tray-action::after {
@@ -815,13 +831,29 @@
   right: 0;
   max-height: 320px;
   overflow: auto;
-  background: var(--oc-surface);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 14px;
   box-shadow:
     0 8px 30px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.04);
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
   padding: 6px;
+  transform-origin: top center;
+  animation: oc-panel-in 180ms var(--oc-ease-out) both;
+}
+
+@keyframes oc-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .oc-tree-search-list {
@@ -975,9 +1007,9 @@
   text-align: left;
   background: transparent;
   color: var(--oc-ink);
-  transition-property: background-color, border-color, box-shadow;
-  transition-duration: 150ms, 150ms, 200ms;
-  transition-timing-function: ease, ease, var(--oc-ease-out);
+  transition-property: background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 150ms, 150ms, 200ms, 120ms, 120ms;
+  transition-timing-function: ease, ease, var(--oc-ease-out), ease-out, ease-out;
 }
 
 .oc-row:hover {
@@ -991,6 +1023,7 @@
 .oc-row-drop {
   background: var(--oc-green-wash);
   border-color: var(--oc-green-line);
+  box-shadow: 0 0 0 1px var(--oc-green-line);
 }
 
 .oc-row-drop .oc-row-name,
@@ -1014,7 +1047,8 @@
 }
 
 .oc-row-dragging {
-  opacity: 0.55;
+  opacity: 0.4;
+  transform: scale(0.98);
 }
 
 .oc-chevron,
@@ -1025,11 +1059,27 @@
   display: grid;
   place-items: center;
   color: var(--oc-faint);
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.oc-chevron svg {
+  transition: transform 180ms var(--oc-ease-out);
+  transform-origin: center;
+}
+
+.oc-chevron.is-open svg {
+  transform: rotate(90deg);
 }
 
 .oc-handle {
   cursor: grab;
   width: 14px;
+}
+
+.oc-handle:active {
+  cursor: grabbing;
 }
 
 .oc-row-main {
@@ -1091,18 +1141,21 @@
   color: #ffffff;
 }
 
-/* Dialogs — transitions (interruptible), not keyframes */
+/* Dialogs — transitions (interruptible), not keyframes.
+   Enter/exit share the same path (spatial consistency). */
 .oc-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(24, 24, 27, 0.35);
+  background: rgba(24, 24, 27, 0.28);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
   display: grid;
   place-items: center;
   padding: 24px;
   z-index: 50;
   opacity: 0;
   transition-property: opacity;
-  transition-duration: 180ms;
+  transition-duration: 220ms;
   transition-timing-function: var(--oc-ease-out);
 }
 
@@ -1117,8 +1170,10 @@
 
 .oc-modal {
   width: min(480px, 100%);
-  background: var(--oc-surface);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
   /* concentric: field radius 10 + padding 20 */
   border-radius: 30px;
   padding: 20px;
@@ -1129,12 +1184,13 @@
   overflow: auto;
   color: var(--oc-ink);
   opacity: 0;
-  transform: translateY(8px) scale(0.98);
+  transform: translateY(10px) scale(0.98);
   box-shadow:
-    0 8px 30px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.04);
+    0 24px 48px rgba(0, 0, 0, 0.12),
+    0 8px 20px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
   transition-property: opacity, transform;
-  transition-duration: 180ms;
+  transition-duration: 220ms;
   transition-timing-function: var(--oc-ease-out);
 }
 
@@ -1145,7 +1201,7 @@
 
 .oc-modal-backdrop.is-leaving .oc-modal {
   opacity: 0;
-  transform: translateY(8px) scale(0.98);
+  transform: translateY(10px) scale(0.98);
 }
 
 .oc-modal-wide {
@@ -1360,27 +1416,55 @@
 
 @media (prefers-reduced-motion: reduce) {
   .oc-card-enter,
-  .oc-row-just-moved {
-    animation-duration: 120ms;
+  .oc-row-just-moved,
+  .oc-tree-search-panel {
+    animation: none;
   }
 
   .oc-modal-backdrop,
   .oc-modal,
   .oc-btn,
   .oc-collect-row,
-  .oc-row {
-    transition-duration: 120ms;
+  .oc-row,
+  .oc-chevron svg {
+    transition-duration: 1ms !important;
   }
 
   .oc-card-enter,
   .oc-modal,
-  .oc-row-just-moved {
+  .oc-row-just-moved,
+  .oc-row-dragging,
+  .oc-tree-search-panel {
     transform: none;
   }
 
   .oc-btn:active:not(:disabled),
   .oc-tray-action:active,
-  .oc-row-action:active {
+  .oc-row-action:active,
+  .oc-tree-search-nav-btn:active,
+  .oc-tree-search-clear:active {
     transform: none;
+  }
+
+  .oc-chevron.is-open svg {
+    transform: rotate(90deg);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .oc-topbar,
+  .oc-sandbox-top,
+  .oc-rail,
+  .oc-tree-search-panel,
+  .oc-modal {
+    background: var(--oc-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .oc-modal-backdrop {
+    background: rgba(24, 24, 27, 0.45);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }

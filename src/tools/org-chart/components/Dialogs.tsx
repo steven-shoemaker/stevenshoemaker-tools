@@ -3,11 +3,14 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
+  type TransitionEvent,
 } from 'react'
 import { getDirects } from '../model/graph'
 import type { DirectPlacement, Person } from '../model/types'
@@ -24,6 +27,13 @@ function useModalClose() {
   return useContext(ModalCloseContext)
 }
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
 function Backdrop({
   children,
   onClose,
@@ -31,10 +41,22 @@ function Backdrop({
   children: ReactNode
   onClose: () => void
 }) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const previousFocus = useRef<HTMLElement | null>(null)
+  const finished = useRef(false)
   const [entered, setEntered] = useState(false)
   const [leaving, setLeaving] = useState(false)
 
+  const finish = useCallback(() => {
+    if (finished.current) return
+    finished.current = true
+    onClose()
+  }, [onClose])
+
   useEffect(() => {
+    previousFocus.current = document.activeElement as HTMLElement | null
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     // Double rAF so the browser paints opacity:0 before transitioning in
     let inner = 0
     const outer = window.requestAnimationFrame(() => {
@@ -43,18 +65,64 @@ function Backdrop({
     return () => {
       window.cancelAnimationFrame(outer)
       window.cancelAnimationFrame(inner)
+      document.body.style.overflow = prevOverflow
+      previousFocus.current?.focus?.({ preventScroll: true })
     }
   }, [])
 
   const close = useCallback(() => {
-    if (leaving) return
+    if (leaving || finished.current) return
+    if (prefersReducedMotion()) {
+      finish()
+      return
+    }
     setLeaving(true)
-    window.setTimeout(onClose, 180)
-  }, [leaving, onClose])
+  }, [leaving, finish])
+
+  // Safety if transitionend never fires (browser quirk / display:none)
+  useEffect(() => {
+    if (!leaving) return
+    const t = window.setTimeout(finish, 280)
+    return () => window.clearTimeout(t)
+  }, [leaving, finish])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        close()
+        return
+      }
+      if (e.key !== 'Tab' || !rootRef.current) return
+      const focusables = [
+        ...rootRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
+      ]
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [close])
+
+  const onTransitionEnd = (e: TransitionEvent<HTMLDivElement>) => {
+    if (!leaving) return
+    if (e.target !== e.currentTarget) return
+    if (e.propertyName !== 'opacity') return
+    finish()
+  }
 
   return (
     <ModalCloseContext.Provider value={close}>
       <div
+        ref={rootRef}
         className={[
           'oc-modal-backdrop',
           entered ? 'is-entered' : '',
@@ -66,6 +134,7 @@ function Backdrop({
         onMouseDown={(e) => {
           if (e.target === e.currentTarget) close()
         }}
+        onTransitionEnd={onTransitionEnd}
       >
         {children}
       </div>
@@ -173,10 +242,16 @@ function RemoveConfirmBody({
   onConfirm: () => void
 }) {
   const close = useModalClose()
+  const titleId = useId()
   return (
-    <div className="oc-modal" role="dialog" aria-modal="true">
+    <div
+      className="oc-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
       <div>
-        <h2>Remove {name}?</h2>
+        <h2 id={titleId}>Remove {name}?</h2>
         <p className="oc-modal-sub">
           Moves to Removed · not in Download CSV · Restore anytime
         </p>
@@ -216,10 +291,16 @@ function ResetConfirmDialog({
 
 function ResetConfirmBody({ onConfirm }: { onConfirm: () => void }) {
   const close = useModalClose()
+  const titleId = useId()
   return (
-    <div className="oc-modal" role="dialog" aria-modal="true">
+    <div
+      className="oc-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
       <div>
-        <h2>Reset sandbox?</h2>
+        <h2 id={titleId}>Reset sandbox?</h2>
         <p className="oc-modal-sub">
           Discards edits and restores the import snapshot. Undo history clears.
         </p>
@@ -280,15 +361,21 @@ function MoveDialogBody({
   onRoot: () => void
 }) {
   const close = useModalClose()
+  const titleId = useId()
   const person = people.find((p) => p.id === personId)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
   const directs = getDirects(people, personId).length
 
   return (
-    <div className="oc-modal" role="dialog" aria-modal="true">
+    <div
+      className="oc-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
       <div>
-        <h2>
+        <h2 id={titleId}>
           {mode === 'restore' ? 'Restore' : 'Move'} {person?.name}
         </h2>
         <p className="oc-modal-sub">
@@ -417,10 +504,16 @@ function CollectPickBody({
   onSelect: (managerId: string) => void
 }) {
   const close = useModalClose()
+  const titleId = useId()
   return (
-    <div className="oc-modal" role="dialog" aria-modal="true">
+    <div
+      className="oc-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
       <div>
-        <h2>Move {name}</h2>
+        <h2 id={titleId}>Move {name}</h2>
         <p className="oc-modal-sub">Choose their new manager</p>
       </div>
       <div className="oc-search">
@@ -467,12 +560,18 @@ function CollectBody({
   onApply: (placements: Record<string, DirectPlacement>, thenRemove: boolean) => void
 }) {
   const close = useModalClose()
+  const titleId = useId()
   const placed = directs.filter((d) => placements[d.id]).length
 
   return (
-    <div className="oc-modal oc-modal-wide" role="dialog" aria-modal="true">
+    <div
+      className="oc-modal oc-modal-wide"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
       <div>
-        <h2>Collect {personName}’s directs</h2>
+        <h2 id={titleId}>Collect {personName}’s directs</h2>
         <p className="oc-modal-sub">
           Place each person before Remove — or empty them to an IC
         </p>
@@ -612,14 +711,20 @@ function AddDialogBody({
   onAdd: (name: string, managerId: string | null | 'unassigned') => void
 }) {
   const close = useModalClose()
+  const titleId = useId()
   const [name, setName] = useState('')
   const [query, setQuery] = useState('')
   const [managerId, setManagerId] = useState<string | null>(null)
 
   return (
-    <div className="oc-modal" role="dialog" aria-modal="true">
+    <div
+      className="oc-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+    >
       <div>
-        <h2>Add person</h2>
+        <h2 id={titleId}>Add person</h2>
         <p className="oc-modal-sub">
           Local only · leave manager blank to put in Unassigned
         </p>
