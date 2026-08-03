@@ -1,8 +1,20 @@
+import { useCallback, useRef, useState, type DragEvent } from 'react'
 import type { OrgChartApi } from '../model/useOrgChart'
 import { DEMO_CSV } from '../model/demo'
 
 type Props = {
   api: OrgChartApi
+}
+
+function isLikelyCsv(file: File): boolean {
+  const name = file.name.toLowerCase()
+  if (name.endsWith('.csv') || name.endsWith('.txt')) return true
+  return (
+    file.type === 'text/csv' ||
+    file.type === 'text/plain' ||
+    file.type === 'application/vnd.ms-excel' ||
+    file.type === ''
+  )
 }
 
 export function ImportScreen({ api }: Props) {
@@ -15,7 +27,51 @@ export function ImportScreen({ api }: Props) {
     working,
     openSandbox,
     error,
+    setError,
   } = api
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+
+  const readLocalFile = useCallback(
+    (file: File) => {
+      if (!isLikelyCsv(file)) {
+        setError('Choose a .csv or .txt file')
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = () => {
+        const text = typeof reader.result === 'string' ? reader.result : ''
+        if (!text.trim()) {
+          setError('That file looks empty')
+          return
+        }
+        setFileName(file.name)
+        setCsvText(text)
+        setError(null)
+      }
+      reader.onerror = () => {
+        setError('Couldn’t read that file')
+      }
+      reader.readAsText(file)
+    },
+    [setCsvText, setError],
+  )
+
+  const onFileChange = (files: FileList | null) => {
+    const file = files?.[0]
+    if (!file) return
+    readLocalFile(file)
+    // Allow re-selecting the same file
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const onDrop = (e: DragEvent<HTMLElement>) => {
+    e.preventDefault()
+    setDragOver(false)
+    onFileChange(e.dataTransfer.files)
+  }
 
   return (
     <div className="oc-import">
@@ -44,22 +100,69 @@ export function ImportScreen({ api }: Props) {
       <main className="oc-import-main">
         <div className="oc-step">Step 1 · Import</div>
         <div className="oc-hero">
-          <h1>Paste your name–manager CSV</h1>
+          <h1>Paste or choose your name–manager CSV</h1>
           <p>
             We’ll clean dirty rows, show repairs, then open a full sandbox to
-            rearrange people and watch SPOC numbers update.
+            rearrange people and watch SPOC numbers update. Files stay on your
+            machine.
           </p>
         </div>
 
-        <section className="oc-card">
+        <section
+          className={['oc-card', dragOver ? 'oc-card-drop' : ''].join(' ')}
+          onDragEnter={(e) => {
+            e.preventDefault()
+            setDragOver(true)
+          }}
+          onDragOver={(e) => {
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'copy'
+            setDragOver(true)
+          }}
+          onDragLeave={(e) => {
+            if (e.currentTarget.contains(e.relatedTarget as Node)) return
+            setDragOver(false)
+          }}
+          onDrop={onDrop}
+        >
           <div className="oc-card-head">
             <strong>CSV input</strong>
-            <span>name / manager · flexible headers</span>
+            <span>
+              {fileName
+                ? fileName
+                : 'name / manager · paste, choose, or drop'}
+            </span>
           </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.txt,text/csv,text/plain"
+            className="oc-file-input"
+            aria-label="Choose CSV file"
+            onChange={(e) => onFileChange(e.target.files)}
+          />
+
+          <div className="oc-file-row">
+            <button
+              type="button"
+              className="oc-btn oc-btn-secondary"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Choose CSV
+            </button>
+            <span className="oc-file-hint">
+              {dragOver ? 'Drop to load locally' : 'or drop a file on this card'}
+            </span>
+          </div>
+
           <textarea
             className="oc-textarea"
             value={csvText}
-            onChange={(e) => setCsvText(e.target.value)}
+            onChange={(e) => {
+              setFileName(null)
+              setCsvText(e.target.value)
+            }}
             placeholder={'Name, Manager\nAva Chen,\nJordan Lee, Ava Chen'}
             spellCheck={false}
             aria-label="CSV input"
@@ -76,6 +179,7 @@ export function ImportScreen({ api }: Props) {
               type="button"
               className="oc-btn oc-btn-secondary"
               onClick={() => {
+                setFileName(null)
                 setCsvText(DEMO_CSV)
                 buildFromCsv(DEMO_CSV)
               }}
