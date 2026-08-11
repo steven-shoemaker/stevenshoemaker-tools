@@ -1,4 +1,10 @@
-import { useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react'
 import type { DecisionMatrixApi } from '../model/useDecisionMatrix'
 
 type Props = {
@@ -9,14 +15,74 @@ export function MatrixHeader({ api }: Props) {
   const { state, setTitle } = api
   const [exportOpen, setExportOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const exportBtnRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const menuId = useId()
+
+  const closeExport = useCallback(() => {
+    setExportOpen(false)
+    exportBtnRef.current?.focus({ preventScroll: true })
+  }, [])
+
+  useEffect(() => {
+    if (!exportOpen) return
+
+    const items = menuRef.current?.querySelectorAll<HTMLElement>(
+      '[role="menuitem"]',
+    )
+    items?.[0]?.focus()
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        closeExport()
+        return
+      }
+
+      if (!items || items.length === 0) return
+      const focusables = [...items]
+      const idx = focusables.indexOf(document.activeElement as HTMLElement)
+
+      switch (e.key) {
+        case 'ArrowDown': {
+          e.preventDefault()
+          const next = idx < focusables.length - 1 ? idx + 1 : 0
+          focusables[next]?.focus()
+          break
+        }
+        case 'ArrowUp': {
+          e.preventDefault()
+          const prev = idx > 0 ? idx - 1 : focusables.length - 1
+          focusables[prev]?.focus()
+          break
+        }
+        case 'Home': {
+          e.preventDefault()
+          focusables[0]?.focus()
+          break
+        }
+        case 'End': {
+          e.preventDefault()
+          focusables[focusables.length - 1]?.focus()
+          break
+        }
+        default:
+          break
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [exportOpen, closeExport])
 
   const onImport = (file: File) => {
     const reader = new FileReader()
     reader.onload = () => {
       const text = String(reader.result ?? '')
       if (!api.importJson(text)) {
-        api.dismissToast()
-        window.alert('Could not import that file. Use a decision-matrix JSON export.')
+        window.alert(
+          'Could not import that file. Use a decision-matrix JSON export.',
+        )
       }
     }
     reader.readAsText(file)
@@ -39,7 +105,7 @@ export function MatrixHeader({ api }: Props) {
             className="dm-title-input"
             value={state.title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Decision title"
+            placeholder="Name this decision"
             aria-label="Decision title"
           />
         </div>
@@ -56,10 +122,12 @@ export function MatrixHeader({ api }: Props) {
 
         <div className="dm-export-wrap">
           <button
+            ref={exportBtnRef}
             type="button"
             className="dm-btn dm-btn-secondary"
             aria-expanded={exportOpen}
             aria-haspopup="menu"
+            aria-controls={exportOpen ? menuId : undefined}
             onClick={() => setExportOpen((o) => !o)}
           >
             Export
@@ -70,16 +138,23 @@ export function MatrixHeader({ api }: Props) {
                 type="button"
                 className="dm-export-backdrop"
                 aria-label="Close export menu"
-                onClick={() => setExportOpen(false)}
+                tabIndex={-1}
+                onClick={closeExport}
               />
-              <div className="dm-export-menu" role="menu">
+              <div
+                ref={menuRef}
+                id={menuId}
+                className="dm-export-menu"
+                role="menu"
+                aria-label="Export options"
+              >
                 <button
                   type="button"
                   role="menuitem"
                   className="dm-export-item"
                   onClick={() => {
                     void api.copyMarkdown()
-                    setExportOpen(false)
+                    closeExport()
                   }}
                 >
                   Copy markdown summary
@@ -90,7 +165,7 @@ export function MatrixHeader({ api }: Props) {
                   className="dm-export-item"
                   onClick={() => {
                     api.downloadCsv()
-                    setExportOpen(false)
+                    closeExport()
                   }}
                 >
                   Download CSV
@@ -101,7 +176,7 @@ export function MatrixHeader({ api }: Props) {
                   className="dm-export-item"
                   onClick={() => {
                     api.downloadJson()
-                    setExportOpen(false)
+                    closeExport()
                   }}
                 >
                   Download JSON
@@ -112,10 +187,10 @@ export function MatrixHeader({ api }: Props) {
                   className="dm-export-item"
                   onClick={() => {
                     fileRef.current?.click()
-                    setExportOpen(false)
+                    closeExport()
                   }}
                 >
-                  Import JSON…
+                  Import JSON
                 </button>
               </div>
             </>

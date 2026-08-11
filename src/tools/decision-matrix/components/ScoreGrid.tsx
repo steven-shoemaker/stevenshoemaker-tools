@@ -1,4 +1,4 @@
-import { useCallback, useRef, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { DecisionMatrixApi } from '../model/useDecisionMatrix'
 import { scoreKey } from '../model/types'
 
@@ -9,6 +9,27 @@ type Props = {
 export function ScoreGrid({ api }: Props) {
   const { state, compute, setScore } = api
   const gridRef = useRef<HTMLDivElement>(null)
+  const [fadeEnd, setFadeEnd] = useState(false)
+
+  useEffect(() => {
+    const el = gridRef.current
+    if (!el) return
+
+    const updateFade = () => {
+      const canScroll = el.scrollWidth > el.clientWidth + 2
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4
+      setFadeEnd(canScroll && !atEnd)
+    }
+
+    updateFade()
+    el.addEventListener('scroll', updateFade, { passive: true })
+    const ro = new ResizeObserver(updateFade)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', updateFade)
+      ro.disconnect()
+    }
+  }, [state.options.length, state.criteria.length])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>, row: number, col: number) => {
@@ -50,13 +71,16 @@ export function ScoreGrid({ api }: Props) {
             Score matrix
           </h2>
           <p className="dm-section-sub">
-            Rate each option against every criterion ({state.scaleMin} = low,{' '}
-            {state.scaleMax} = high). Arrow keys move between cells.
+            Rate each option ({state.scaleMin} low, {state.scaleMax} high). Arrow
+            keys move between cells.
           </p>
         </div>
       </div>
 
-      <div className="dm-grid-scroll" ref={gridRef}>
+      <div
+        ref={gridRef}
+        className={`dm-grid-scroll${fadeEnd ? ' dm-grid-scroll-fade' : ''}`}
+      >
         <table className="dm-grid">
           <thead>
             <tr>
@@ -86,7 +110,7 @@ export function ScoreGrid({ api }: Props) {
                     <span className="dm-grid-opt-name">{o.name}</span>
                     {result && compute.hasWeights && (
                       <span className="dm-grid-opt-total">
-                        {formatScore(result.total)}
+                        Total {formatScore(result.total)}
                       </span>
                     )}
                   </th>
@@ -107,7 +131,7 @@ export function ScoreGrid({ api }: Props) {
                             setScore(o.id, c.id, Number(e.target.value))
                           }
                           onKeyDown={(e) => handleKeyDown(e, row, col)}
-                          aria-label={`${o.name}, ${c.name}`}
+                          aria-label={`${o.name}, ${c.name}, score ${value}`}
                         />
                       </td>
                     )

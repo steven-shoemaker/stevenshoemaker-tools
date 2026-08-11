@@ -22,14 +22,17 @@ export function RankingsPanel({ api }: Props) {
           </h2>
           <p className="dm-section-sub">
             {compute.hasWeights
-              ? 'Weighted totals update as you edit scores and weights.'
-              : 'Set criterion weights to enable ranking.'}
+              ? 'Totals refresh as you change scores and weights.'
+              : 'Set criterion weights to rank options.'}
           </p>
         </div>
         {leader && compute.hasWeights && (
           <div className="dm-leader-pill">
             <span className="dm-leader-label">Leading</span>
             <strong>{leader.optionName}</strong>
+            <span className="dm-leader-score">
+              {formatScore(leader.total)} · {leader.percent}%
+            </span>
           </div>
         )}
       </div>
@@ -41,56 +44,59 @@ export function RankingsPanel({ api }: Props) {
           {compute.results.map((r) => (
             <li key={r.optionId} className="dm-rank-item">
               <div className="dm-rank-row">
-                <span className="dm-rank-num" aria-label={`Rank ${r.rank}`}>
-                  {r.rank}
-                </span>
+                <div className="dm-rank-badge">
+                  <span className="dm-rank-num" aria-hidden>
+                    {r.rank}
+                  </span>
+                  <span className="dm-rank-label">Rank {r.rank}</span>
+                </div>
                 <div className="dm-rank-body">
                   <div className="dm-rank-top">
                     <span className="dm-rank-name">{r.optionName}</span>
                     <span className="dm-rank-score">
                       {compute.hasWeights ? (
                         <>
+                          <span className="dm-rank-score-label">Total</span>
                           <strong>{formatScore(r.total)}</strong>
                           <span className="dm-rank-pct">{r.percent}%</span>
                         </>
                       ) : (
-                        <span className="dm-muted">No weights</span>
+                        <span className="dm-muted">No weights set</span>
                       )}
                     </span>
                   </div>
 
                   {compute.hasWeights && r.breakdown.length > 0 && (
-                    <div
-                      className="dm-breakdown"
-                      role="img"
-                      aria-label={`Score breakdown for ${r.optionName}`}
-                    >
-                      {r.breakdown.map((b) => (
-                        <span
-                          key={b.criterionId}
-                          className="dm-breakdown-seg"
-                          style={{
-                            flexGrow: b.contribution,
-                            flexBasis: 0,
-                          }}
-                          title={`${b.criterionName}: ${formatScore(b.contribution)} (${Math.round(b.weightShare * 100)}% weight × score ${b.score})`}
-                        />
-                      ))}
-                    </div>
-                  )}
+                    <>
+                      <div
+                        className="dm-breakdown"
+                        aria-hidden
+                      >
+                        {r.breakdown.map((b) => (
+                          <span
+                            key={b.criterionId}
+                            className="dm-breakdown-seg"
+                            style={{
+                              flexGrow: b.contribution,
+                              flexBasis: 0,
+                            }}
+                            title={`${b.criterionName}: ${formatScore(b.contribution)} (${Math.round(b.weightShare * 100)}% weight × score ${b.score})`}
+                          />
+                        ))}
+                      </div>
 
-                  {compute.hasWeights && (
-                    <ul className="dm-breakdown-legend">
-                      {r.breakdown.map((b) => (
-                        <li key={b.criterionId}>
-                          <span className="dm-legend-dot" aria-hidden />
-                          <span>{b.criterionName}</span>
-                          <span className="dm-legend-val">
-                            {formatScore(b.contribution)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                      <ul className="dm-breakdown-legend" aria-label={`Breakdown for ${r.optionName}`}>
+                        {r.breakdown.map((b) => (
+                          <li key={b.criterionId}>
+                            <span className="dm-legend-dot" aria-hidden />
+                            <span>{b.criterionName}</span>
+                            <span className="dm-legend-val">
+                              {formatScore(b.contribution)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
                   )}
                 </div>
               </div>

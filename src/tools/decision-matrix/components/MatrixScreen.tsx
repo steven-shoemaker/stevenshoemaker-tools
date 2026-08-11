@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { DecisionMatrixApi } from '../model/useDecisionMatrix'
 import { CriteriaPanel } from './CriteriaPanel'
@@ -10,20 +11,62 @@ type Props = {
   api: DecisionMatrixApi
 }
 
+function formatScore(n: number): string {
+  return (Math.round(n * 100) / 100).toFixed(2)
+}
+
 export function MatrixScreen({ api }: Props) {
-  const { state, compute } = api
+  const { state, compute, toast, dismissToast, sharedFromUrl } = api
   const empty =
     state.options.length === 0 && state.criteria.length === 0
+  const leader = compute.results[0]
+  const [rankAnnounce, setRankAnnounce] = useState('')
+  const announceTimer = useRef(0)
+
+  useEffect(() => {
+    if (!toast) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        dismissToast()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [toast, dismissToast])
+
+  useEffect(() => {
+    window.clearTimeout(announceTimer.current)
+    if (!compute.hasWeights || !leader) {
+      setRankAnnounce('')
+      return
+    }
+    const { optionName, total, percent } = leader
+    announceTimer.current = window.setTimeout(() => {
+      setRankAnnounce(
+        `${optionName} leads with ${formatScore(total)} points (${percent}%)`,
+      )
+    }, 600)
+    return () => window.clearTimeout(announceTimer.current)
+  }, [leader, compute.hasWeights])
 
   return (
     <div className="dm-screen">
       <MatrixHeader api={api} />
 
-      {api.sharedFromUrl && (
+      {sharedFromUrl && (
         <div className="dm-banner" role="status">
-          Opened from a shared link. Edits save locally on this device.
+          Shared link loaded. Changes save on this device.
         </div>
       )}
+
+      <div
+        className="dm-sr-only"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {rankAnnounce}
+      </div>
 
       <main className="dm-main">
         <RankingsPanel api={api} />
@@ -32,8 +75,8 @@ export function MatrixScreen({ api }: Props) {
           <section className="dm-empty dm-card">
             <h2 className="dm-empty-title">Start your matrix</h2>
             <p className="dm-empty-copy">
-              Add options you are choosing between and criteria that matter.
-              Weight each criterion, score every cell, and rankings update live.
+              Add options and weighted criteria, then score each cell. Rankings
+              update as you edit.
             </p>
             <div className="dm-empty-actions">
               <button
@@ -44,7 +87,7 @@ export function MatrixScreen({ api }: Props) {
                   api.addCriterion()
                 }}
               >
-                Add first option and criterion
+                Add option and criterion
               </button>
               <button
                 type="button"
@@ -64,7 +107,7 @@ export function MatrixScreen({ api }: Props) {
 
             {state.options.length === 0 && (
               <div className="dm-hint dm-card">
-                <p>Add at least one option to score and rank.</p>
+                <p>Add an option before you can score the matrix.</p>
                 <button
                   type="button"
                   className="dm-btn dm-btn-secondary"
@@ -77,7 +120,7 @@ export function MatrixScreen({ api }: Props) {
 
             {state.criteria.length === 0 && (
               <div className="dm-hint dm-card">
-                <p>Add criteria with weights to calculate rankings.</p>
+                <p>Add a weighted criterion to calculate rankings.</p>
                 <button
                   type="button"
                   className="dm-btn dm-btn-secondary"
@@ -90,7 +133,7 @@ export function MatrixScreen({ api }: Props) {
 
             {!compute.hasWeights && state.criteria.length > 0 && (
               <div className="dm-warn dm-card" role="alert">
-                All criteria weights are zero. Adjust weights to rank options.
+                All weights are zero. Move a slider to rank options.
               </div>
             )}
 
@@ -105,13 +148,23 @@ export function MatrixScreen({ api }: Props) {
         <Link className="dm-back" to="/">
           ← All tools
         </Link>
-        <span>Scores {state.scaleMin}–{state.scaleMax} · nothing leaves your browser</span>
+        <span className="dm-footer-meta">
+          Scores {state.scaleMin}–{state.scaleMax} · nothing leaves your browser
+        </span>
       </footer>
 
-      {api.toast && (
-        <div className="dm-toast" role="status" onClick={api.dismissToast}>
-          {api.toast}
-        </div>
+      {toast && (
+        <button
+          type="button"
+          className="dm-toast"
+          role="status"
+          onClick={dismissToast}
+        >
+          <span>{toast}</span>
+          <span className="dm-toast-hint" aria-hidden>
+            Esc
+          </span>
+        </button>
       )}
     </div>
   )
