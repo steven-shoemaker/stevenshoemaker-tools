@@ -41,9 +41,9 @@ export function OptionsPanel({ api }: Props) {
                 className="dm-btn dm-btn-ghost dm-btn-icon"
                 onClick={() => removeOption(o.id)}
                 aria-label={`Remove ${o.name}`}
-                title="Remove option"
+                title={`Remove ${o.name}`}
               >
-                ×
+                <span aria-hidden>×</span>
               </button>
             </li>
           ))}

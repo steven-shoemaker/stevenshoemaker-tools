@@ -25,7 +25,7 @@ export function CriteriaPanel({ api }: Props) {
         </button>
       </div>
       <p className="dm-section-sub">
-        Weight each factor. Shares normalize to {totalWeight || 0} total points.
+        Set relative weight. Shares sum from {totalWeight || 0} total points.
       </p>
 
       {state.criteria.length === 0 ? (
@@ -51,8 +51,9 @@ export function CriteriaPanel({ api }: Props) {
                     className="dm-btn dm-btn-ghost dm-btn-icon"
                     onClick={() => removeCriterion(c.id)}
                     aria-label={`Remove ${c.name}`}
+                    title={`Remove ${c.name}`}
                   >
-                    ×
+                    <span aria-hidden>×</span>
                   </button>
                 </div>
                 <div className="dm-weight-row">
