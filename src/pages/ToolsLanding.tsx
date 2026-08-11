@@ -11,6 +11,15 @@ const TOOLS = [
     to: '/org-chart',
     available: true,
   },
+  {
+    id: 'decision-matrix',
+    number: '002',
+    title: 'Weighted Decision Matrix',
+    description:
+      'Compare options with weighted criteria. Score the grid, watch rankings and breakdowns update live.',
+    to: '/decision-matrix',
+    available: true,
+  },
 ] as const
 
 export function ToolsLanding() {
@@ -52,8 +61,8 @@ export function ToolsLanding() {
             Run in your browser.
           </h1>
           <p className="tl-lede tl-enter tl-enter-3">
-            Single-purpose utilities for people ops and analysis. Nothing
-            uploaded — your data stays on your machine.
+            Single-purpose utilities for decisions, analysis, and everyday work.
+            Nothing uploaded — your data stays on your machine.
           </p>
         </section>
 
