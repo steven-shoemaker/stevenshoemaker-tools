@@ -13,6 +13,7 @@ React + TypeScript (Vite) app for small, client-side tools. Deploy once to Verce
 | Route | Name |
 |---|---|
 | `/org-chart` | Org Chart from CSV (Tool No. 001) |
+| `/decision-matrix` | Weighted Decision Matrix (Tool No. 002) |
 
 ## Fonts (SF Pro)
 
