@@ -1,5 +1,5 @@
 .decision-matrix {
-  --dm-page: #f4f4f5;
+  --dm-page: #ffffff;
   --dm-surface: #ffffff;
   --dm-ink: #18181b;
   /* Neutral text ramp, shifted one step darker so every tier clears WCAG AA
@@ -358,10 +358,8 @@
 }
 
 .dm-main {
-  width: min(1320px, 100%);
-  margin: 0 auto;
-  padding-block: 40px 72px;
-  padding-inline: 40px;
+  width: 100%;
+  padding-block: 32px 64px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -504,7 +502,6 @@
 /* Score grid */
 .dm-grid-section {
   padding: 0;
-  overflow: hidden;
 }
 
 /* Compact remove control in the column header: the colour trigger and the name
@@ -522,13 +519,13 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 28px 28px 4px;
+  padding: 0 40px 4px;
 }
 
 .dm-grid-scroll {
   overflow-x: auto;
   padding-block: 24px 28px;
-  padding-inline: 28px;
+  padding-inline: 40px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
@@ -743,10 +740,10 @@
 /* Discoverable without being loud: visible at rest, prominent on approach.
    Kept in the DOM and focusable so the keyboard path never depends on hover. */
 .dm-add-col {
-  width: 44px;
+  width: 100%;
   min-width: 44px;
   padding: 0;
-  vertical-align: stretch;
+  text-align: start;
   border-block-end: 1px solid var(--dm-line);
 }
 
@@ -765,7 +762,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  width: 44px;
   min-height: 56px;
   border: none;
   border-radius: var(--dm-radius-xs);
@@ -780,7 +777,10 @@
 }
 
 .dm-add-btn-wide {
+  width: 100%;
   min-height: 48px;
+  justify-content: flex-start;
+  padding-inline-start: 14px;
 }
 
 .dm-add-col:hover .dm-add-btn,
@@ -797,6 +797,39 @@
    identity cell, so the dragged row is lifted above its neighbours instead. */
 .dm-option-row {
   position: relative;
+}
+
+.dm-option-row > th,
+.dm-option-row > td {
+  padding-block: var(--dm-row-pad, 12px);
+  overflow: hidden;
+}
+
+.dm-cell-in {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Entrance for a newly added criterion. The cells cascade down the rows so the
+   motion says "a column landed" rather than just "something changed". */
+@keyframes dm-col-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.dm-col-enter {
+  animation: dm-col-enter 200ms var(--dm-ease-out) both;
+}
+
+.dm-cell-enter {
+  animation: dm-col-enter 200ms var(--dm-ease-out) both;
+  animation-delay: var(--dm-cell-delay, 0ms);
 }
 
 .dm-option-row-dragging {
@@ -840,7 +873,7 @@
   background: var(--dm-surface);
   padding-block: 14px;
   width: 1%;
-  min-width: 312px;
+  min-width: 264px;
   padding: 8px 12px;
   text-align: left;
   font-weight: 400;
@@ -967,6 +1000,47 @@
   white-space: nowrap;
 }
 
+/* Number pop-in (transitions.dev). Tokens are scoped here so the feel of the
+   total is tunable in one place. */
+.decision-matrix {
+  --digit-dur: 420ms;
+  --digit-distance: 8px;
+  --digit-stagger: 70ms;
+  --digit-blur: 2px;
+  --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --digit-dir-x: 0;
+  --digit-dir-y: 1;
+}
+
+@keyframes t-digit-pop-in {
+  0% {
+    transform: translate(
+      calc(var(--digit-distance) * var(--digit-dir-x)),
+      calc(var(--digit-distance) * var(--digit-dir-y))
+    );
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.t-digit-group {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.t-digit {
+  display: inline-block;
+}
+
+.t-digit-pop {
+  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
+}
+
 .dm-total-num {
   font-family: var(--dm-mono);
   font-size: 15px;
@@ -1003,6 +1077,11 @@
 }
 
 /* Empty / hint / warn */
+.dm-empty,
+.dm-warn {
+  margin-inline: 40px;
+}
+
 .dm-empty {
   text-align: center;
   padding: 48px 32px;
@@ -1156,7 +1235,8 @@
      Scoped to .decision-matrix so these outrank the
      `.decision-matrix input { font-size: inherit }` reset above. */
   .decision-matrix .dm-title-input,
-  .decision-matrix .dm-entity-input {
+  .decision-matrix .dm-name-display,
+  .decision-matrix .dm-name-input {
     font-size: 16px;
   }
 
@@ -1173,8 +1253,14 @@
     min-width: 178px;
   }
 
-  .dm-grid-scroll {
+  .dm-grid-scroll,
+  .dm-grid-head {
     padding-inline: 16px;
+  }
+
+  .dm-empty,
+  .dm-warn {
+    margin-inline: 16px;
   }
 
   /* At this width the name, the rank chip and the remove control cannot share
@@ -1184,9 +1270,11 @@
     gap: 4px 8px;
   }
 
-  .dm-row-head-inner .dm-entity-input {
+  .dm-row-head-inner .dm-name-display,
+  .dm-row-head-inner .dm-name-input {
     order: -1;
     flex-basis: 100%;
+    max-width: none;
   }
 
   .dm-grid-total-cell,
@@ -1219,6 +1307,16 @@
 
   .dm-btn:active:not(:disabled) {
     transform: none;
+  }
+
+  .t-digit-pop {
+    animation: none;
+  }
+
+  .dm-col-enter,
+  .dm-cell-enter {
+    animation-name: dm-pop-opacity;
+    animation-delay: 0ms;
   }
 
   .dm-total-seg,

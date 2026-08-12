@@ -6,14 +6,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
 } from 'react'
-import {
-  AnimatePresence,
-  animate,
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useTransform,
-} from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { DecisionMatrixApi } from '../model/useDecisionMatrix'
 import {
   PALETTE,
@@ -25,6 +18,7 @@ import { scoreKey, type Criterion, type Option, type OptionResult } from '../mod
 
 /** Bounce stays at 0 — this is data settling, not a toy. */
 const SPRING = { type: 'spring', duration: 0.4, bounce: 0 } as const
+
 
 type Props = {
   api: DecisionMatrixApi
@@ -69,6 +63,23 @@ export function ScoreGrid({ api }: Props) {
       ro.disconnect()
     }
   }, [state.options.length, state.criteria.length])
+
+  // Only criteria added since the last commit animate in. Without this every
+  // column would play its entrance on page load, and again on every reset.
+  const prevRef = useRef<{ ids: Set<string>; docId: number } | null>(null)
+  const firstRender = prevRef.current === null
+  if (!prevRef.current) {
+    prevRef.current = { ids: new Set(state.criteria.map((c) => c.id)), docId }
+  }
+  const newCriterionIds = new Set<string>()
+  if (!firstRender && prevRef.current.docId === docId) {
+    for (const c of state.criteria) {
+      if (!prevRef.current.ids.has(c.id)) newCriterionIds.add(c.id)
+    }
+  }
+  useEffect(() => {
+    prevRef.current = { ids: new Set(state.criteria.map((c) => c.id)), docId }
+  })
 
   const tbodyRef = useRef<HTMLTableSectionElement>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
@@ -134,7 +145,7 @@ export function ScoreGrid({ api }: Props) {
   )
 
   return (
-    <section className="dm-grid-section dm-card" aria-labelledby="dm-grid-title">
+    <section className="dm-grid-section" aria-labelledby="dm-grid-title">
       <div className="dm-grid-head">
         <div>
           <h2 id="dm-grid-title" className="dm-section-title">
@@ -169,6 +180,7 @@ export function ScoreGrid({ api }: Props) {
                   name={c.name}
                   weight={c.weight}
                   color={criterionColor(col, c.color)}
+                  isNew={newCriterionIds.has(c.id)}
                   onColor={(hex) => setCriterionColor(c.id, hex)}
                   share={compute.shares[c.id] ?? 0}
                   onRename={(v) => renameCriterion(c.id, v)}
@@ -214,6 +226,7 @@ export function ScoreGrid({ api }: Props) {
                   onRemove={() => removeOption(o.id)}
                   onScore={(cid, v) => setScore(o.id, cid, v)}
                   onMove={(delta) => moveOption(row, delta)}
+                  newCriterionIds={newCriterionIds}
                   dragging={draggingId === o.id}
                   onDragStart={() => setDraggingId(o.id)}
                 />
@@ -269,6 +282,7 @@ type OptionRowProps = {
   onRemove: () => void
   onScore: (criterionId: string, value: number) => void
   onMove: (delta: number) => void
+  newCriterionIds: Set<string>
   dragging: boolean
   onDragStart: () => void
 }
@@ -287,9 +301,11 @@ function OptionRow({
   onRemove,
   onScore,
   onMove,
+  newCriterionIds,
   dragging,
   onDragStart,
 }: OptionRowProps) {
+  const reduced = useReducedMotion()
 
   const onHandleKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
@@ -303,8 +319,15 @@ function OptionRow({
         dragging ? 'dm-option-row dm-option-row-dragging' : 'dm-option-row'
       }
       initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0, '--dm-row-pad': '12px' }}
+      exit={{
+        opacity: 0,
+        height: 0,
+        '--dm-row-pad': '0px',
+        transition: reduced
+          ? { duration: 0.2, ease: 'linear' }
+          : { duration: 0.25, ease: [0.2, 0, 0, 1] },
+      }}
       transition={SPRING}
     >
       <th scope="row" className="dm-grid-row-head">
@@ -355,13 +378,22 @@ function OptionRow({
 
       {criteria.map((c) => (
         <td key={c.id} className="dm-grid-cell">
-          <ScoreCell
-            label={`${option.name}, ${c.name}`}
-            value={scores[scoreKey(option.id, c.id)] ?? scaleMin}
-            min={scaleMin}
-            max={scaleMax}
-            onChange={(v) => onScore(c.id, v)}
-          />
+          <div
+            className={
+              newCriterionIds.has(c.id) ? 'dm-cell-in dm-cell-enter' : 'dm-cell-in'
+            }
+            style={
+              { '--dm-cell-delay': `${Math.min(index, 4) * 40}ms` } as CSSProperties
+            }
+          >
+            <ScoreCell
+              label={`${option.name}, ${c.name}`}
+              value={scores[scoreKey(option.id, c.id)] ?? scaleMin}
+              min={scaleMin}
+              max={scaleMax}
+              onChange={(v) => onScore(c.id, v)}
+            />
+          </div>
         </td>
       ))}
 
@@ -479,6 +511,7 @@ type CriterionHeaderProps = {
   weight: number
   color: string
   onColor: (hex: string) => void
+  isNew: boolean
   share: number
   onRename: (value: string) => void
   onWeight: (value: number) => void
@@ -491,6 +524,7 @@ function CriterionHeader({
   weight,
   color,
   onColor,
+  isNew,
   share,
   onRename,
   onWeight,
@@ -498,6 +532,7 @@ function CriterionHeader({
 }: CriterionHeaderProps) {
   return (
     <th scope="col" className="dm-grid-col-head">
+      <div className={isNew ? 'dm-col-enter' : undefined}>
       <div className="dm-col-top">
         <ColorPicker value={color} onSelect={onColor} criterion={name} />
         <EditableName
@@ -528,6 +563,7 @@ function CriterionHeader({
           aria-label={`Weight for ${name}`}
         />
         <span className="dm-col-share">{share}%</span>
+      </div>
       </div>
     </th>
   )
@@ -767,25 +803,48 @@ function ScoreCell({ label, value, min, max, onChange }: ScoreCellProps) {
 }
 
 /**
- * Counts the total to its new value so a weight change reads as the numbers
- * moving, not as the page swapping under you. Drives a MotionValue directly so
- * it does not re-render the row on every frame.
+ * Pops each changed digit in, staggered left to right. Digits are keyed by
+ * position + glyph, so an unchanged digit is never remounted and never
+ * animates - only the part of the number that actually moved does.
  */
 function AnimatedScore({ value }: { value: number }) {
-  const reduced = useReducedMotion()
-  const mv = useMotionValue(value)
-  const text = useTransform(mv, (v) => formatScore(v))
-
-  useEffect(() => {
-    if (reduced) {
-      mv.set(value)
-      return
+  const text = formatScore(value)
+  // Slider drags emit a new value every frame. Replaying the pop that fast
+  // would restart each digit from opacity 0 and leave the number unreadable,
+  // so a burst of changes updates the text without animating.
+  const prev = useRef({ text, was: text, at: 0, pop: false })
+  if (prev.current.text !== text) {
+    const now = performance.now()
+    prev.current = {
+      was: prev.current.text,
+      text,
+      at: now,
+      pop: now - prev.current.at > 220,
     }
-    const controls = animate(mv, value, SPRING)
-    return () => controls.stop()
-  }, [value, reduced, mv])
+  }
+  const { was, pop } = prev.current
+  // A digit count change (9.99 -> 10.00) makes index comparison meaningless,
+  // so the whole number pops rather than a misaligned subset.
+  const lengthChanged = was.length !== text.length
 
-  return <motion.span>{text}</motion.span>
+  let order = 0
+  return (
+    <span className="t-digit-group">
+      {text.split('').map((ch, i) => {
+        const moved = pop && (lengthChanged || was[i] !== ch)
+        const delay = moved ? order++ * 70 : 0
+        return (
+          <span
+            key={`${i}-${ch}`}
+            className={moved ? 't-digit t-digit-pop' : 't-digit'}
+            style={moved ? { animationDelay: `${delay}ms` } : undefined}
+          >
+            {ch}
+          </span>
+        )
+      })}
+    </span>
+  )
 }
 
 function formatScore(n: number): string {
