@@ -6,6 +6,43 @@ import type {
 } from './types'
 import { scoreKey } from './types'
 
+/**
+ * Percentages are shares of the total weight, so they must read as 100.
+ * Rounding each independently shows 33/33/33 = 99; largest-remainder gives the
+ * leftover point to the criterion that was rounded down hardest.
+ */
+function sharePercents(
+  criteria: MatrixState['criteria'],
+  totalWeight: number,
+): Record<string, number> {
+  const out: Record<string, number> = {}
+  if (totalWeight <= 0) {
+    for (const c of criteria) out[c.id] = 0
+    return out
+  }
+
+  const parts = criteria.map((c) => {
+    const exact = (c.weight / totalWeight) * 100
+    const floor = Math.floor(exact)
+    return { id: c.id, weight: c.weight, floor, remainder: exact - floor }
+  })
+
+  let leftover = 100 - parts.reduce((sum, p) => sum + p.floor, 0)
+  // A zero-weight criterion must stay at 0%, so it never takes a leftover point.
+  const eligible = parts
+    .filter((p) => p.weight > 0)
+    .sort((a, b) => b.remainder - a.remainder)
+
+  for (const p of eligible) {
+    if (leftover <= 0) break
+    p.floor += 1
+    leftover -= 1
+  }
+
+  for (const p of parts) out[p.id] = p.floor
+  return out
+}
+
 export function computeMatrix(state: MatrixState): MatrixCompute {
   const totalWeight = state.criteria.reduce((sum, c) => sum + c.weight, 0)
   const hasWeights = totalWeight > 0
@@ -65,7 +102,13 @@ export function computeMatrix(state: MatrixState): MatrixCompute {
       }),
     )
 
-  return { results, totalWeight, hasWeights, hasScores }
+  return {
+    results,
+    totalWeight,
+    hasWeights,
+    hasScores,
+    shares: sharePercents(state.criteria, totalWeight),
+  }
 }
 
 function clampScore(value: number, min: number, max: number): number {

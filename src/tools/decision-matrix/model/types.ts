@@ -8,6 +8,8 @@ export type Criterion = {
   name: string
   /** Relative importance; normalized at compute time */
   weight: number
+  /** Palette hex chosen by the user; falls back to a per-index default. */
+  color?: string
 }
 
 export type ScoreMap = Record<string, number>
@@ -46,6 +48,8 @@ export type MatrixCompute = {
   totalWeight: number
   hasWeights: boolean
   hasScores: boolean
+  /** Whole-number share per criterion id; always sums to 100 when weighted. */
+  shares: Record<string, number>
 }
 
 export function scoreKey(optionId: string, criterionId: string): string {

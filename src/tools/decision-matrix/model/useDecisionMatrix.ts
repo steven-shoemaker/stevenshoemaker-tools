@@ -7,8 +7,9 @@ import {
   encodeShareState,
   readShareFromLocation,
 } from './share'
+import { isPaletteColor } from './palette'
 import { clearState, loadState, saveState } from './storage'
-import type { MatrixState } from './types'
+import type { MatrixState, Option } from './types'
 import { newId, scoreKey } from './types'
 
 function initialState(): MatrixState {
@@ -22,15 +23,20 @@ function initialState(): MatrixState {
 export type DecisionMatrixApi = {
   state: MatrixState
   compute: ReturnType<typeof computeMatrix>
+  /** Bumped when the whole document is replaced, never on an incremental edit. */
+  docId: number
   sharedFromUrl: boolean
   toast: string | null
   setTitle: (title: string) => void
   addOption: () => void
   renameOption: (id: string, name: string) => void
   removeOption: (id: string) => void
+  /** Replaces the option order wholesale; scores are keyed by id, not index. */
+  reorderOptions: (next: Option[]) => void
   addCriterion: () => void
   renameCriterion: (id: string, name: string) => void
   setCriterionWeight: (id: string, weight: number) => void
+  setCriterionColor: (id: string, color: string) => void
   removeCriterion: (id: string) => void
   setScore: (optionId: string, criterionId: string, score: number) => void
   resetToDemo: () => void
@@ -45,6 +51,7 @@ export type DecisionMatrixApi = {
 
 export function useDecisionMatrix(): DecisionMatrixApi {
   const [state, setState] = useState<MatrixState>(initialState)
+  const [docId, setDocId] = useState(0)
   const [sharedFromUrl] = useState(() => readShareFromLocation() !== null)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -98,6 +105,10 @@ export function useDecisionMatrix(): DecisionMatrixApi {
     })
   }, [])
 
+  const reorderOptions = useCallback((next: Option[]) => {
+    setState((s) => ({ ...s, options: next }))
+  }, [])
+
   const addCriterion = useCallback(() => {
     const criterion = {
       id: newId(),
@@ -122,6 +133,13 @@ export function useDecisionMatrix(): DecisionMatrixApi {
     setState((s) => ({
       ...s,
       criteria: s.criteria.map((c) => (c.id === id ? { ...c, weight: w } : c)),
+    }))
+  }, [])
+
+  const setCriterionColor = useCallback((id: string, color: string) => {
+    setState((s) => ({
+      ...s,
+      criteria: s.criteria.map((c) => (c.id === id ? { ...c, color } : c)),
     }))
   }, [])
 
@@ -155,6 +173,7 @@ export function useDecisionMatrix(): DecisionMatrixApi {
 
   const resetToDemo = useCallback(() => {
     clearState()
+    setDocId((n) => n + 1)
     setState(createDemoState())
     window.history.replaceState(null, '', window.location.pathname)
     showToast('Loaded sample decision')
@@ -162,6 +181,7 @@ export function useDecisionMatrix(): DecisionMatrixApi {
 
   const clearAll = useCallback(() => {
     clearState()
+    setDocId((n) => n + 1)
     setState({
       title: '',
       options: [],
@@ -218,10 +238,14 @@ export function useDecisionMatrix(): DecisionMatrixApi {
       if (!Array.isArray(data.options) || !Array.isArray(data.criteria)) {
         return false
       }
+      setDocId((n) => n + 1)
       setState({
         title: data.title ?? '',
         options: data.options,
-        criteria: data.criteria,
+        criteria: data.criteria.map((c) => ({
+          ...c,
+          color: isPaletteColor(c.color) ? c.color.toLowerCase() : undefined,
+        })),
         scores: data.scores ?? {},
         scaleMin: data.scaleMin ?? 1,
         scaleMax: data.scaleMax ?? 5,
@@ -239,15 +263,18 @@ export function useDecisionMatrix(): DecisionMatrixApi {
   return {
     state,
     compute,
+    docId,
     sharedFromUrl,
     toast,
     setTitle,
     addOption,
     renameOption,
     removeOption,
+    reorderOptions,
     addCriterion,
     renameCriterion,
     setCriterionWeight,
+    setCriterionColor,
     removeCriterion,
     setScore,
     resetToDemo,
