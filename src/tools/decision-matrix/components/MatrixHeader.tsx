@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import type { DecisionMatrixApi } from '../model/useDecisionMatrix'
 
 type Props = {
@@ -12,7 +13,8 @@ type Props = {
 }
 
 export function MatrixHeader({ api }: Props) {
-  const { state, setTitle } = api
+  const { state, compute, docId, setTitle } = api
+  const leader = compute.hasWeights ? compute.results[0] : undefined
   const [exportOpen, setExportOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const exportBtnRef = useRef<HTMLButtonElement>(null)
@@ -111,6 +113,41 @@ export function MatrixHeader({ api }: Props) {
         </div>
       </div>
 
+      <div className="dm-leader-slot" key={docId}>
+      <AnimatePresence initial={false}>
+        {leader && (
+          <motion.div
+            className="dm-leader-pill"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
+          >
+            <span className="dm-sr-only">Leading</span>
+            {/* Keyed on identity, not name: renaming the leader should not
+                replay the swap on every keystroke. Name and score swap as one
+                unit so the pill never pairs an old name with a new score. */}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={leader.optionId}
+                className="dm-leader-body"
+                initial={{ opacity: 0, scale: 0.88, filter: 'blur(4px)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, scale: 0.88, filter: 'blur(4px)' }}
+                transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
+              >
+                <strong>{leader.optionName}</strong>
+                <span className="dm-leader-score">
+                  {(Math.round(leader.total * 100) / 100).toFixed(2)} ·{' '}
+                  {leader.percent}%
+                </span>
+              </motion.span>
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </div>
+
       <div className="dm-header-actions">
         <button
           type="button"
@@ -147,6 +184,13 @@ export function MatrixHeader({ api }: Props) {
                 className="dm-export-menu"
                 role="menu"
                 aria-label="Export options"
+                onBlur={(e) => {
+                  // Tab past the last item leaves focus behind an open menu,
+                  // so aria-expanded stops matching what is on screen.
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setExportOpen(false)
+                  }
+                }}
               >
                 <button
                   type="button"

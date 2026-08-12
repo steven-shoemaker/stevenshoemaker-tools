@@ -2,11 +2,12 @@
   --dm-page: #f4f4f5;
   --dm-surface: #ffffff;
   --dm-ink: #18181b;
-  --dm-muted: #71717a;
-  --dm-faint: #a1a1aa;
+  /* Neutral text ramp, shifted one step darker so every tier clears WCAG AA
+     on both --dm-surface and --dm-soft: ink 17.7:1, muted 7.7:1, faint 4.8:1. */
+  --dm-muted: #52525b;
+  --dm-faint: #6b6b73;
   --dm-line: #e4e4e7;
   --dm-soft: #fafafa;
-  --dm-green: #10b981;
   --dm-green-ink: #047857;
   --dm-green-wash: #ecfdf5;
   --dm-green-line: #a7f3d0;
@@ -14,11 +15,18 @@
   --dm-amber-wash: #fffbeb;
   --dm-red: #b91c1c;
   --dm-red-line: #fecaca;
-  --dm-blue: #2563eb;
-  --dm-violet: #7c3aed;
-  --dm-teal: #0d9488;
-  --dm-orange: #ea580c;
-  --dm-pink: #db2777;
+  --dm-cat-1: #c3e5a2; /* Chartreuse */
+  --dm-cat-2: #b5d5f4; /* Sky */
+  --dm-cat-3: #e2cef4; /* Lilac */
+  --dm-cat-4: #8cecdc; /* Mint */
+  --dm-cat-5: #f5c9e0; /* Rose */
+  --dm-cat-6: #9de5f4; /* Aqua */
+  /* Podium ramp for the top three ranks, best to worst. Pastel so the rank
+     digit reads dark on top of it. Everything below is neutral. */
+  --dm-rank-1: #a5ebbc; /* Sage */
+  --dm-rank-2: #f5df8d; /* Butter */
+  --dm-rank-3: #f5cebd; /* Peach */
+  --dm-rank-rest: #e4e4e7;
   --dm-font: var(--font-text);
   --dm-display: var(--font-display);
   --dm-rounded: var(--font-rounded);
@@ -61,7 +69,7 @@
 }
 
 .decision-matrix :focus-visible {
-  outline: 2px solid rgba(24, 24, 27, 0.55);
+  outline: 2px solid rgba(24, 24, 27, 0.5);
   outline-offset: 2px;
 }
 
@@ -197,8 +205,8 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding-block: 16px;
-  padding-inline: 32px;
+  padding-block: 20px;
+  padding-inline: 40px;
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -262,7 +270,6 @@
 
 .dm-title-input:focus-visible {
   border-radius: 6px;
-  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
 }
 
 .dm-header-actions {
@@ -351,10 +358,10 @@
 }
 
 .dm-main {
-  width: min(1200px, 100%);
+  width: min(1320px, 100%);
   margin: 0 auto;
-  padding-block: 24px 48px;
-  padding-inline: 32px;
+  padding-block: 40px 72px;
+  padding-inline: 40px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -404,25 +411,36 @@
   font-size: 13px;
 }
 
-/* Rankings */
-.dm-rankings-head {
+.dm-leader-slot {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
+  min-width: 0;
 }
 
+/* Lives in the sticky header so the live answer is always visible without
+   owning the top of the page. */
 .dm-leader-pill {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  padding: 10px 14px;
-  border-radius: var(--dm-radius-sm);
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
   background: var(--dm-green-wash);
   border: 1px solid var(--dm-green-line);
   flex-shrink: 0;
+  min-width: 0;
+}
+
+.dm-leader-body {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dm-leader-pill strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dm-leader-label {
@@ -448,230 +466,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-.dm-rank-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--dm-space);
-}
-
-.dm-rank-item {
-  padding: 14px 16px;
-  border-radius: var(--dm-radius-md);
-  background: var(--dm-soft);
-  transition: box-shadow 150ms ease;
-}
-
-.dm-rank-item:first-child {
-  background: linear-gradient(180deg, #ffffff 0%, var(--dm-soft) 100%);
-  box-shadow:
-    0 0 0 1px rgba(16, 185, 129, 0.12),
-    0 1px 2px rgba(16, 185, 129, 0.06);
-}
-
-.dm-rank-row {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-}
-
-.dm-rank-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.dm-rank-num {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: var(--dm-ink);
-  color: #fff;
-  font-family: var(--dm-rounded);
-  font-size: 12px;
-  font-weight: 600;
-  display: grid;
-  place-items: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.dm-rank-label {
-  font-family: var(--dm-rounded);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--dm-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.dm-rank-item:first-child .dm-rank-num {
-  background: var(--dm-green-ink);
-}
-
-.dm-rank-item:first-child .dm-rank-label {
-  color: var(--dm-green-ink);
-}
-
-.dm-rank-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.dm-rank-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.dm-rank-name {
-  font-family: var(--dm-rounded);
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.dm-rank-score {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-variant-numeric: tabular-nums;
-}
-
-.dm-rank-score-label {
-  font-family: var(--dm-rounded);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--dm-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.dm-rank-score strong {
-  font-family: var(--dm-mono);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.dm-rank-pct {
-  font-family: var(--dm-mono);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--dm-muted);
-}
-
-.dm-breakdown {
-  display: flex;
-  height: 8px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--dm-line);
-  gap: 1px;
-}
-
-.dm-breakdown-seg {
-  min-width: 2px;
-  transition: flex-grow 200ms var(--dm-ease-out);
-}
-
-.dm-breakdown-seg:nth-child(1) { background: var(--dm-green); }
-.dm-breakdown-seg:nth-child(2) { background: var(--dm-blue); }
-.dm-breakdown-seg:nth-child(3) { background: var(--dm-violet); }
-.dm-breakdown-seg:nth-child(4) { background: var(--dm-teal); }
-.dm-breakdown-seg:nth-child(5) { background: var(--dm-orange); }
-.dm-breakdown-seg:nth-child(6) { background: var(--dm-pink); }
-.dm-breakdown-seg:nth-child(n + 7) { background: var(--dm-faint); }
-
-.dm-breakdown-legend {
-  list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-}
-
-.dm-breakdown-legend li {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--dm-muted);
-}
-
-.dm-legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.dm-breakdown-legend li:nth-child(1) .dm-legend-dot { background: var(--dm-green); }
-.dm-breakdown-legend li:nth-child(2) .dm-legend-dot { background: var(--dm-blue); }
-.dm-breakdown-legend li:nth-child(3) .dm-legend-dot { background: var(--dm-violet); }
-.dm-breakdown-legend li:nth-child(4) .dm-legend-dot { background: var(--dm-teal); }
-.dm-breakdown-legend li:nth-child(5) .dm-legend-dot { background: var(--dm-orange); }
-.dm-breakdown-legend li:nth-child(6) .dm-legend-dot { background: var(--dm-pink); }
-.dm-breakdown-legend li:nth-child(n + 7) .dm-legend-dot { background: var(--dm-faint); }
-
-.dm-legend-val {
-  font-family: var(--dm-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--dm-ink);
-}
-
-/* Side panels */
-.dm-panels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--dm-space-lg);
-}
-
-.dm-panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 6px;
-}
-
-.dm-panel-empty {
-  margin-block-start: 16px;
-}
-
-.dm-entity-list,
-.dm-criteria-list {
-  list-style: none;
-  margin-block-start: 16px;
-  margin-block-end: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--dm-space);
-}
-
-.dm-entity-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.dm-entity-index {
-  width: 22px;
-  font-family: var(--dm-mono);
-  font-size: 11px;
-  color: var(--dm-faint);
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
 .dm-entity-input {
   flex: 1;
+  width: 100%;
   min-width: 0;
   padding: 8px 10px;
   border: 1px solid var(--dm-line);
@@ -694,67 +491,14 @@
   box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
 }
 
-.dm-criterion-row {
-  padding: 12px;
-  border-radius: var(--dm-radius-sm);
-  background: var(--dm-soft);
-}
-
-.dm-criterion-top {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 10px;
-}
-
-.dm-weight-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .dm-weight-slider {
   flex: 1;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
   height: 4px;
   accent-color: var(--dm-ink);
   cursor: pointer;
-}
-
-.dm-weight-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.dm-weight-num {
-  width: 44px;
-  padding: 6px;
-  border: 1px solid var(--dm-line);
-  border-radius: 6px;
-  background: var(--dm-surface);
-  font-family: var(--dm-mono);
-  font-size: 12px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  transition-property: border-color, box-shadow;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
-}
-
-.dm-weight-num:focus-visible {
-  border-color: rgba(24, 24, 27, 0.35);
-  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
-}
-
-.dm-weight-share {
-  width: 36px;
-  font-family: var(--dm-rounded);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--dm-muted);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Score grid */
@@ -763,14 +507,28 @@
   overflow: hidden;
 }
 
+/* Compact remove control in the column header: the colour trigger and the name
+   both need the width, and 24px is still a valid target. */
+.dm-col-top .dm-btn-icon,
+.dm-row-head-inner .dm-btn-icon {
+  min-width: 24px;
+  min-height: 24px;
+  font-size: 15px;
+}
+
 .dm-grid-head {
-  padding: 20px 20px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 28px 28px 4px;
 }
 
 .dm-grid-scroll {
   overflow-x: auto;
-  padding-block: 16px 20px;
-  padding-inline: 20px;
+  padding-block: 24px 28px;
+  padding-inline: 28px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
@@ -780,7 +538,7 @@
     to right,
     #000 0,
     #000 calc(100% - 40px),
-    transparent 100%
+    rgba(0, 0, 0, 0.25) 100%
   );
 }
 
@@ -792,8 +550,7 @@
 }
 
 .dm-grid-corner,
-.dm-grid-col-head,
-.dm-grid-row-head {
+.dm-grid-total-head {
   text-align: left;
   font-family: var(--dm-rounded);
   font-size: 11px;
@@ -802,90 +559,447 @@
   text-transform: uppercase;
   color: var(--dm-faint);
   padding: 10px 12px;
-}
-
-.dm-grid-col-head,
-.dm-grid-cell {
-  border-block-end: 1px solid var(--dm-line);
-}
-
-.dm-grid-col-head {
-  text-align: center;
   vertical-align: bottom;
 }
 
-.dm-grid-crit-name {
-  display: block;
-  font-size: 12px;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--dm-ink);
-  font-weight: 600;
-  margin-bottom: 2px;
+.dm-grid-total-head {
+  text-align: right;
 }
 
-.dm-grid-crit-weight {
-  display: block;
+.dm-grid-col-head,
+.dm-grid-cell,
+.dm-grid-total-cell {
+  border-block-end: 1px solid var(--dm-line);
+}
+
+.dm-grid-corner,
+.dm-grid-total-head {
+  border-block-end: 1px solid var(--dm-line);
+}
+
+.dm-grid-corner {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: var(--dm-surface);
+}
+
+/* Criterion column header: name, weight and share live with the scores they
+   drive, so adjusting a weight re-ranks the rows right beside it. */
+.dm-grid-col-head {
+  width: 1%;
+  min-width: 172px;
+  padding: 8px 10px 16px;
+  vertical-align: bottom;
+}
+
+.dm-col-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dm-color-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* 24px trigger around a 12px swatch: the pastels need the extra size to read,
+   and an 8px dot was well under a usable target. */
+.dm-color-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.dm-color-trigger:hover {
+  background: var(--dm-soft);
+}
+
+.dm-col-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.dm-color-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-start: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 8px;
+  background: var(--dm-surface);
+  border: 1px solid var(--dm-line);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 16px 40px rgba(0, 0, 0, 0.06);
+  animation: dm-pop 180ms var(--dm-ease-out) both;
+}
+
+.dm-swatch {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(24, 24, 27, 0.12);
+  transition: transform 120ms var(--dm-ease-out);
+}
+
+.dm-swatch:hover {
+  transform: scale(1.08);
+}
+
+/* Selection is a ring, not a tint, so it reads on every swatch in the set. */
+.dm-swatch-on {
+  box-shadow:
+    inset 0 0 0 1px rgba(24, 24, 27, 0.12),
+    0 0 0 2px var(--dm-surface),
+    0 0 0 4px var(--dm-ink);
+}
+
+/* Display and edit share metrics so activating an edit does not shift layout. */
+.dm-name-display,
+.dm-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 6px;
+  border-radius: var(--dm-radius-xs);
+  font: inherit;
+  color: var(--dm-ink);
+  text-align: start;
+}
+
+.dm-name-display {
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: text;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+  transition: background-color 150ms ease;
+}
+
+.dm-name-display:hover {
+  background: var(--dm-soft);
+}
+
+/* Editing reads as the field waking up, not as an alert. */
+.dm-name-input {
+  border: 1px solid var(--dm-line);
+  background: var(--dm-surface);
+}
+
+.dm-name-empty {
+  color: var(--dm-faint);
+}
+
+/* Sizes to its own text rather than being squeezed by the flex row, which is
+   what was clipping longer names; wraps to a second line when it must. */
+.dm-col-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  max-width: 150px;
+}
+
+.dm-option-name {
+  font-size: 14px;
+  line-height: 1.3;
+  max-width: 190px;
+}
+
+.dm-col-weight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block-start: 12px;
+}
+
+.dm-col-share {
   font-family: var(--dm-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
+  color: var(--dm-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* Discoverable without being loud: visible at rest, prominent on approach.
+   Kept in the DOM and focusable so the keyboard path never depends on hover. */
+.dm-add-col {
+  width: 44px;
+  min-width: 44px;
+  padding: 0;
+  vertical-align: stretch;
+  border-block-end: 1px solid var(--dm-line);
+}
+
+.dm-add-col-cell {
+  padding: 0;
+  border-block-end: 1px solid var(--dm-line);
+}
+
+.dm-add-row-head {
+  padding: 0;
+  text-align: start;
+  font-weight: 400;
+}
+
+.dm-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 56px;
+  border: none;
+  border-radius: var(--dm-radius-xs);
+  background: transparent;
+  color: var(--dm-faint);
+  opacity: 0.5;
+  cursor: pointer;
+  transition:
+    opacity 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.dm-add-btn-wide {
+  min-height: 48px;
+}
+
+.dm-add-col:hover .dm-add-btn,
+.dm-add-col-cell:hover ~ .dm-grid-total-cell .dm-add-btn,
+.dm-add-row:hover .dm-add-btn,
+.dm-add-btn:hover,
+.dm-add-btn:focus-visible {
+  opacity: 1;
+  background: var(--dm-soft);
+  color: var(--dm-ink);
+}
+
+/* A transform on the row makes it the containing block for the sticky
+   identity cell, so the dragged row is lifted above its neighbours instead. */
+.dm-option-row {
+  position: relative;
+}
+
+.dm-option-row-dragging {
+  z-index: 5;
+}
+
+.dm-option-row-dragging .dm-grid-row-head {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.dm-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dm-faint);
+  cursor: grab;
+  touch-action: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.dm-drag-handle:hover {
+  color: var(--dm-ink);
+  background: var(--dm-soft);
+}
+
+.dm-drag-handle:active {
+  cursor: grabbing;
+}
+
+.dm-grid-row-head {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: var(--dm-surface);
+  padding-block: 14px;
+  width: 1%;
+  min-width: 312px;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 400;
+  vertical-align: middle;
+}
+
+.dm-row-head-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dm-rank-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--dm-rank-fill, var(--dm-rank-rest));
+  color: var(--dm-ink);
+  position: relative;
+  font-family: var(--dm-mono);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 220ms var(--dm-ease-out);
+  font-weight: 700;
+}
+
+/* Stacked so the outgoing and incoming digits crossfade in place rather than
+   leaving the chip empty between them. */
+.dm-rank-num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+
+
+/* Score cell: a fixed scale is a picker, not a numeric field. */
+.dm-score-seg {
+  position: relative;
+  display: inline-flex;
+  border: 1px solid var(--dm-line);
+  border-radius: var(--dm-radius-xs);
+  background: var(--dm-soft);
+  overflow: hidden;
+}
+
+.dm-score-opt {
+  position: relative;
+  z-index: 1;
+  min-width: 24px;
+  min-height: 32px;
+  padding: 0 2px;
+  border: none;
+  background: transparent;
+  color: var(--dm-muted);
+  font-family: var(--dm-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition-property: background-color, color;
+  transition-duration: 120ms;
+  transition-timing-function: ease;
+}
+
+.dm-score-opt + .dm-score-opt {
+  box-shadow: inset 1px 0 0 var(--dm-line);
+}
+
+.dm-score-opt:hover:not([aria-checked='true']) {
+  color: var(--dm-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dm-score-opt:active {
+    transform: scale(0.96);
+  }
+}
+
+.dm-score-opt[aria-checked='true'] {
+  color: #fff;
+}
+
+/* A single highlight that slides between segments instead of five backgrounds
+   cutting in and out. Equal-width segments make it pure arithmetic. */
+.dm-score-thumb {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: calc(100% / var(--dm-seg-count));
+  background: var(--dm-ink);
+  transform: translateX(calc(var(--dm-seg-index) * 100%));
+  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+  pointer-events: none;
+}
+
+.dm-grid-cell {
+  padding: 12px 10px;
+  text-align: start;
+}
+
+/* Total cell: the one home for a row's score, with the stacked bar that
+   explains where it came from. */
+.dm-grid-total-cell,
+.dm-grid-total-head {
+  position: sticky;
+  inset-inline-end: 0;
+  background: var(--dm-surface);
+  box-shadow: inset 1px 0 0 var(--dm-line);
+}
+
+.dm-grid-total-cell {
+  padding: 14px 20px;
+  min-width: 128px;
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dm-total-num {
+  font-family: var(--dm-mono);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--dm-ink);
+}
+
+.dm-total-pct {
+  margin-inline-start: 6px;
+  font-family: var(--dm-mono);
+  font-size: 11px;
   color: var(--dm-muted);
   font-variant-numeric: tabular-nums;
 }
 
-.dm-grid-row-head {
-  min-width: 140px;
-  vertical-align: middle;
+.dm-total-bar {
+  display: flex;
+  height: 8px;
+  margin-block-start: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--dm-line);
+  gap: 1px;
 }
 
-.dm-grid-opt-name {
-  display: block;
-  font-size: 13px;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--dm-ink);
-  font-weight: 600;
+.dm-total-seg {
+  min-width: 2px;
+  transition: flex-grow 200ms var(--dm-ease-out);
 }
 
-.dm-grid-opt-total {
-  display: block;
-  margin-block-start: 2px;
+.dm-total-empty {
   font-family: var(--dm-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--dm-green-ink);
-  font-variant-numeric: tabular-nums;
-}
-
-.dm-grid-cell {
-  padding: 6px;
-  text-align: center;
-}
-
-.dm-score-input {
-  width: 52px;
-  padding: 8px 4px;
-  border: 1px solid var(--dm-line);
-  border-radius: var(--dm-radius-xs);
-  background: var(--dm-soft);
-  font-family: var(--dm-mono);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  transition-property: border-color, background-color, box-shadow;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
-}
-
-.dm-score-input:hover {
-  border-color: #d4d4d8;
-}
-
-.dm-score-input:focus-visible {
-  border-color: var(--dm-ink);
-  background: var(--dm-surface);
-  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.12);
 }
 
 /* Empty / hint / warn */
@@ -917,7 +1031,6 @@
   justify-content: center;
 }
 
-.dm-hint,
 .dm-warn {
   display: flex;
   align-items: center;
@@ -927,7 +1040,6 @@
   padding: 14px 18px;
 }
 
-.dm-hint p,
 .dm-warn p {
   margin: 0;
   font-size: 13px;
@@ -1022,12 +1134,6 @@
   }
 }
 
-@media (max-width: 900px) {
-  .dm-panels {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 720px) {
   .dm-header,
   .dm-main,
@@ -1046,12 +1152,58 @@
     justify-content: flex-start;
   }
 
-  .dm-rankings-head {
-    flex-direction: column;
+  /* iOS Safari zooms the page whenever a focused input renders below 16px.
+     Scoped to .decision-matrix so these outrank the
+     `.decision-matrix input { font-size: inherit }` reset above. */
+  .decision-matrix .dm-title-input,
+  .decision-matrix .dm-entity-input {
+    font-size: 16px;
+  }
+
+  /* Give the score picker a comfortable touch target. */
+  .dm-score-opt {
+    min-width: 34px;
+    min-height: 40px;
+    font-size: 13px;
+  }
+
+  /* The identity column keeps its sticky leading edge, but a pinned total
+     column as well would leave no room to actually reach the scores. */
+  .dm-grid-row-head {
+    min-width: 178px;
+  }
+
+  .dm-grid-scroll {
+    padding-inline: 16px;
+  }
+
+  /* At this width the name, the rank chip and the remove control cannot share
+     a line without truncating the name to two characters. */
+  .dm-row-head-inner {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .dm-row-head-inner .dm-entity-input {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  .dm-grid-total-cell,
+  .dm-grid-total-head {
+    position: static;
+    box-shadow: none;
+    border-inline-start: 1px solid var(--dm-line);
+  }
+
+  /* Title, answer and actions each get their own row instead of competing. */
+  .dm-header-left,
+  .dm-leader-pill {
+    flex-basis: 100%;
   }
 
   .dm-leader-pill {
-    align-items: flex-start;
+    justify-content: flex-start;
   }
 }
 
@@ -1069,8 +1221,16 @@
     transform: none;
   }
 
-  .dm-breakdown-seg {
+  .dm-total-seg,
+  .dm-rank-chip,
+  .dm-swatch,
+  .dm-score-thumb,
+  .dm-drag-handle {
     transition: none;
+  }
+
+  .dm-score-opt:active {
+    transform: none;
   }
 }
 

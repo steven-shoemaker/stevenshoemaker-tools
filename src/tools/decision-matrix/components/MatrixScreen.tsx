@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { MotionConfig } from 'motion/react'
 import type { DecisionMatrixApi } from '../model/useDecisionMatrix'
-import { CriteriaPanel } from './CriteriaPanel'
 import { MatrixHeader } from './MatrixHeader'
-import { OptionsPanel } from './OptionsPanel'
-import { RankingsPanel } from './RankingsPanel'
 import { ScoreGrid } from './ScoreGrid'
 
 type Props = {
@@ -51,6 +49,9 @@ export function MatrixScreen({ api }: Props) {
   }, [leader, compute.hasWeights])
 
   return (
+    // reducedMotion="user" drops transform and layout animations for anyone
+    // who asked for that at the OS level; AnimatedScore handles its own.
+    <MotionConfig reducedMotion="user">
     <div className="dm-screen">
       <MatrixHeader api={api} />
 
@@ -68,9 +69,18 @@ export function MatrixScreen({ api }: Props) {
         {rankAnnounce}
       </div>
 
-      <main className="dm-main">
-        <RankingsPanel api={api} />
+      {/* Stable region: a live region mounted at the same moment as its text
+          announces unreliably, so the toast announces from here instead. */}
+      <div
+        className="dm-sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {toast ?? ''}
+      </div>
 
+      <main className="dm-main">
         {empty ? (
           <section className="dm-empty dm-card">
             <h2 className="dm-empty-title">Start your matrix</h2>
@@ -100,45 +110,12 @@ export function MatrixScreen({ api }: Props) {
           </section>
         ) : (
           <>
-            <div className="dm-panels">
-              <OptionsPanel api={api} />
-              <CriteriaPanel api={api} />
-            </div>
-
-            {state.options.length === 0 && (
-              <div className="dm-hint dm-card">
-                <p>Add an option before you can score the matrix.</p>
-                <button
-                  type="button"
-                  className="dm-btn dm-btn-secondary"
-                  onClick={api.addOption}
-                >
-                  Add option
-                </button>
-              </div>
-            )}
-
-            {state.criteria.length === 0 && (
-              <div className="dm-hint dm-card">
-                <p>Add a weighted criterion to calculate rankings.</p>
-                <button
-                  type="button"
-                  className="dm-btn dm-btn-secondary"
-                  onClick={api.addCriterion}
-                >
-                  Add criterion
-                </button>
-              </div>
-            )}
+            <ScoreGrid api={api} />
 
             {!compute.hasWeights && state.criteria.length > 0 && (
               <div className="dm-warn dm-card" role="alert">
-                All weights are zero. Move a slider to rank options.
+                All weights are zero. Move a weight slider to rank options.
               </div>
-            )}
-
-            {state.options.length > 0 && state.criteria.length > 0 && (
-              <ScoreGrid api={api} />
             )}
           </>
         )}
@@ -157,15 +134,16 @@ export function MatrixScreen({ api }: Props) {
         <button
           type="button"
           className="dm-toast"
-          role="status"
           onClick={dismissToast}
+          aria-label={`${toast}. Dismiss`}
         >
-          <span>{toast}</span>
+          <span aria-hidden>{toast}</span>
           <span className="dm-toast-hint" aria-hidden>
             Esc
           </span>
         </button>
       )}
     </div>
+    </MotionConfig>
   )
 }
