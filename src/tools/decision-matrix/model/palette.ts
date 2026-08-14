@@ -44,14 +44,3 @@ export function criterionColor(index: number, color?: string): string {
 export function swatchName(hex: string): string {
   return PALETTE.find((s) => s.hex === hex.toLowerCase())?.name ?? 'Custom'
 }
-
-/**
- * Podium ramp. Only the top three are coloured; the rest stay neutral so the
- * colour means "on the podium" rather than just "has a rank".
- */
-const RANK_STOPS = ['--dm-rank-1', '--dm-rank-2', '--dm-rank-3']
-
-export function rankColor(rank: number | undefined): string {
-  const stop = rank === undefined ? undefined : RANK_STOPS[rank - 1]
-  return `var(${stop ?? '--dm-rank-rest'})`
-}

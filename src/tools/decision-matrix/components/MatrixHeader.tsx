@@ -117,16 +117,16 @@ export function MatrixHeader({ api }: Props) {
       <AnimatePresence initial={false}>
         {leader && (
           <motion.div
-            className="dm-leader-pill"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
+            className="dm-leader"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
           >
-            <span className="dm-sr-only">Leading</span>
+            <span className="dm-leader-label">Leading</span>
             {/* Keyed on identity, not name: renaming the leader should not
                 replay the swap on every keystroke. Name and score swap as one
-                unit so the pill never pairs an old name with a new score. */}
+                unit so the line never pairs an old name with a new score. */}
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
                 key={leader.optionId}

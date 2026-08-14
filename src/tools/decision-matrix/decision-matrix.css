@@ -8,9 +8,6 @@
   --dm-faint: #6b6b73;
   --dm-line: #e4e4e7;
   --dm-soft: #fafafa;
-  --dm-green-ink: #047857;
-  --dm-green-wash: #ecfdf5;
-  --dm-green-line: #a7f3d0;
   --dm-amber-ink: #92400e;
   --dm-amber-wash: #fffbeb;
   --dm-red: #b91c1c;
@@ -21,12 +18,7 @@
   --dm-cat-4: #8cecdc; /* Mint */
   --dm-cat-5: #f5c9e0; /* Rose */
   --dm-cat-6: #9de5f4; /* Aqua */
-  /* Podium ramp for the top three ranks, best to worst. Pastel so the rank
-     digit reads dark on top of it. Everything below is neutral. */
-  --dm-rank-1: #a5ebbc; /* Sage */
-  --dm-rank-2: #f5df8d; /* Butter */
-  --dm-rank-3: #f5cebd; /* Peach */
-  --dm-rank-rest: #e4e4e7;
+  --dm-rank-fill: #e4e4e7;
   --dm-font: var(--font-text);
   --dm-display: var(--font-display);
   --dm-rounded: var(--font-rounded);
@@ -207,11 +199,8 @@
   flex-wrap: wrap;
   padding-block: 20px;
   padding-inline: 40px;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(228, 228, 231, 0.7);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  background: var(--dm-surface);
+  border-bottom: 1px solid var(--dm-line);
 }
 
 .dm-header-left {
@@ -368,11 +357,8 @@
 
 .dm-card {
   background: var(--dm-surface);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--dm-line);
   border-radius: var(--dm-radius);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 8px 24px rgba(0, 0, 0, 0.03);
   padding: 20px;
   animation: dm-card-enter 240ms var(--dm-ease-out) both;
 }
@@ -415,17 +401,13 @@
 }
 
 /* Lives in the sticky header so the live answer is always visible without
-   owning the top of the page. */
-.dm-leader-pill {
+   owning the top of the page. Type only — colour is reserved for criteria. */
+.dm-leader {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--dm-green-wash);
-  border: 1px solid var(--dm-green-line);
-  flex-shrink: 0;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .dm-leader-body {
@@ -435,10 +417,14 @@
   min-width: 0;
 }
 
-.dm-leader-pill strong {
+.dm-leader strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: var(--dm-rounded);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dm-ink);
 }
 
 .dm-leader-label {
@@ -447,20 +433,14 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--dm-green-ink);
-}
-
-.dm-leader-pill strong {
-  font-family: var(--dm-rounded);
-  font-size: 14px;
-  color: var(--dm-green-ink);
+  color: var(--dm-faint);
 }
 
 .dm-leader-score {
   font-family: var(--dm-mono);
   font-size: 11px;
   font-weight: 500;
-  color: var(--dm-green-ink);
+  color: var(--dm-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -894,15 +874,13 @@
   height: 22px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: var(--dm-rank-fill, var(--dm-rank-rest));
+  background: var(--dm-rank-fill);
   color: var(--dm-ink);
   position: relative;
   font-family: var(--dm-mono);
   font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  transition: background-color 220ms var(--dm-ease-out);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Stacked so the outgoing and incoming digits crossfade in place rather than
@@ -1286,11 +1264,11 @@
 
   /* Title, answer and actions each get their own row instead of competing. */
   .dm-header-left,
-  .dm-leader-pill {
+  .dm-leader {
     flex-basis: 100%;
   }
 
-  .dm-leader-pill {
+  .dm-leader {
     justify-content: flex-start;
   }
 }
@@ -1320,7 +1298,6 @@
   }
 
   .dm-total-seg,
-  .dm-rank-chip,
   .dm-swatch,
   .dm-score-thumb,
   .dm-drag-handle {
@@ -1332,10 +1309,3 @@
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .dm-header {
-    background: var(--dm-surface);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}

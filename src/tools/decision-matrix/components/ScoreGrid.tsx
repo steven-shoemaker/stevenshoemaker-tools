@@ -11,7 +11,6 @@ import type { DecisionMatrixApi } from '../model/useDecisionMatrix'
 import {
   PALETTE,
   criterionColor,
-  rankColor,
   swatchName,
 } from '../model/palette'
 import { scoreKey, type Criterion, type Option, type OptionResult } from '../model/types'
@@ -692,10 +691,7 @@ function RankChip({ rank, fallback }: RankChipProps) {
     : { opacity: 1, scale: 1, filter: 'blur(0px)' }
 
   return (
-    <span
-      className="dm-rank-chip"
-      style={{ '--dm-rank-fill': rankColor(rank) } as CSSProperties}
-    >
+    <span className="dm-rank-chip">
       <AnimatePresence initial={false}>
         <motion.span
           key={shown}
