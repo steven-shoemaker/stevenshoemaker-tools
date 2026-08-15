@@ -77,24 +77,10 @@ export function ImportScreen({ api }: Props) {
     <div className="oc-import">
       <header className="oc-topbar">
         <div className="oc-brand">
-          <div className="oc-brand-mark" aria-hidden>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path
-                d="M3 5.5H11M7 2.5V5.5M4.5 8.5H9.5M5.5 11.5H8.5"
-                stroke="white"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-          <div>
-            <span className="oc-brand-title">Org Chart from CSV</span>
-            <span className="oc-brand-meta">Tool No. 001</span>
-          </div>
+          <span className="oc-brand-meta">Tool No. 001</span>
+          <span className="oc-brand-title">Org Chart from CSV</span>
         </div>
-        <span style={{ fontSize: 12, color: 'var(--oc-faint)' }}>
-          100% in your browser
-        </span>
+        <span className="oc-topbar-note">100% in your browser</span>
       </header>
 
       <main className="oc-import-main">
@@ -187,7 +173,11 @@ export function ImportScreen({ api }: Props) {
               Try demo data
             </button>
           </div>
-          {error ? <p className="oc-error">{error}</p> : null}
+          {error ? (
+            <p className="oc-error-banner oc-error-inline" role="alert">
+              {error}
+            </p>
+          ) : null}
         </section>
 
         {working && previewStats ? (
@@ -212,20 +202,20 @@ export function ImportScreen({ api }: Props) {
             </div>
             <div className="oc-stat-grid">
               <div className="oc-stat">
-                <span className="oc-stat-label">Managers</span>
                 <div className="oc-stat-value">{previewStats.managers}</div>
+                <span className="oc-stat-label">Managers</span>
               </div>
               <div className="oc-stat">
-                <span className="oc-stat-label">Avg span</span>
                 <div className="oc-stat-value">{previewStats.avgSpan}</div>
+                <span className="oc-stat-label">Avg span</span>
               </div>
               <div
                 className={
                   previewStats.depth >= 6 ? 'oc-stat oc-stat-amber' : 'oc-stat'
                 }
               >
-                <span className="oc-stat-label">Depth</span>
                 <div className="oc-stat-value">{previewStats.depth}</div>
+                <span className="oc-stat-label">Depth</span>
               </div>
             </div>
             <div className="oc-preview-foot">

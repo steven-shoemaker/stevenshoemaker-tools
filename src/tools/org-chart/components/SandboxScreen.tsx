@@ -157,14 +157,7 @@ export function SandboxScreen({ api }: Props) {
       </header>
 
       {error ? (
-        <div
-          style={{
-            padding: '8px 20px',
-            background: '#FEF2F2',
-            color: 'var(--oc-red)',
-            fontSize: 13,
-          }}
-        >
+        <div className="oc-error-banner" role="alert">
           {error}
         </div>
       ) : null}
@@ -172,7 +165,7 @@ export function SandboxScreen({ api }: Props) {
       <div className="oc-workspace">
         <aside className="oc-rail">
           <div>
-            <div className="oc-rail-label">LIVE SPOC</div>
+            <div className="oc-rail-label">Live SPOC</div>
             <div className="oc-rail-sub">Updates as you reassign</div>
           </div>
 
@@ -212,7 +205,7 @@ export function SandboxScreen({ api }: Props) {
           </div>
 
           <div className="oc-selected">
-            <div className="oc-rail-label">SELECTED</div>
+            <div className="oc-rail-label">Selected</div>
             {selected && selected.placement === 'inTree' ? (
               <>
                 <h2>{selected.name}</h2>
@@ -273,10 +266,8 @@ export function SandboxScreen({ api }: Props) {
 
           <div className="oc-tray oc-tray-amber">
             <div className="oc-tray-head">
-              <strong>UNASSIGNED · {unassigned.length}</strong>
-              <span style={{ fontSize: 11, color: 'var(--oc-muted)' }}>
-                No manager
-              </span>
+              <strong>Unassigned · {unassigned.length}</strong>
+              <span className="oc-tray-caption">No manager</span>
             </div>
             {unassigned.length === 0 ? (
               <p className="oc-modal-sub">None — clean structure</p>
@@ -303,12 +294,8 @@ export function SandboxScreen({ api }: Props) {
 
           <div className="oc-tray">
             <div className="oc-tray-head">
-              <strong style={{ color: 'var(--oc-faint)' }}>
-                REMOVED · {removed.length}
-              </strong>
-              <span style={{ fontSize: 11, color: 'var(--oc-faint)' }}>
-                Not in export
-              </span>
+              <strong>Removed · {removed.length}</strong>
+              <span className="oc-tray-caption">Not in export</span>
             </div>
             {removed.map((p) => (
               <div key={p.id} className="oc-tray-item">
@@ -418,13 +405,13 @@ function Metric({
         .filter(Boolean)
         .join(' ')}
     >
-      <span className="oc-stat-label">{label}</span>
       <div className="oc-stat-value">
         <AnimatedNumber value={value} decimals={decimals} />
         {deltaText ? (
           <span className="oc-metric-delta">{deltaText}</span>
         ) : null}
       </div>
+      <span className="oc-stat-label">{label}</span>
     </div>
   )
 }

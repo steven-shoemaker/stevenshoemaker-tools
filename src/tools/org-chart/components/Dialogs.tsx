@@ -601,21 +601,11 @@ function CollectBody({
               }
             >
               <span>
-                <strong style={{ display: 'block', fontSize: 13 }}>{d.name}</strong>
-                <span style={{ fontSize: 11, color: 'var(--oc-muted)' }}>
-                  {label}
-                </span>
+                <strong className="oc-collect-name">{d.name}</strong>
+                <span className="oc-collect-meta">{label}</span>
               </span>
               {placement ? (
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 500,
-                    color: 'var(--oc-muted)',
-                  }}
-                >
-                  Placed
-                </span>
+                <span className="oc-collect-placed">Placed</span>
               ) : (
                 <div className="oc-collect-actions">
                   <button
@@ -640,11 +630,6 @@ function CollectBody({
                   <button
                     type="button"
                     className="oc-row-action"
-                    style={{
-                      background: 'var(--oc-amber-wash)',
-                      borderColor: 'transparent',
-                      color: 'var(--oc-amber)',
-                    }}
                     onClick={() =>
                       setPlacements((prev) => ({
                         ...prev,
