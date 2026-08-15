@@ -611,7 +611,7 @@ function CollectBody({
                   style={{
                     fontSize: 11,
                     fontWeight: 500,
-                    color: 'var(--oc-green-ink)',
+                    color: 'var(--oc-muted)',
                   }}
                 >
                   Placed

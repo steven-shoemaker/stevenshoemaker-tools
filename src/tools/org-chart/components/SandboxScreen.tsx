@@ -122,17 +122,7 @@ export function SandboxScreen({ api }: Props) {
           </div>
         </div>
         <div className="oc-sandbox-top-right">
-          <span className="oc-pill oc-pill-green">
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 999,
-                background: 'var(--oc-green)',
-              }}
-            />
-            Saved locally
-          </span>
+          <span className="oc-pill">Saved locally</span>
           <button
             type="button"
             className="oc-btn oc-btn-secondary"
